@@ -8,26 +8,12 @@
 <style>
 /* Layout: one column. Subjects stack top to bottom; each card lists what is overdue (red) or nearly due (yellow). */
 :root {
-  --bg: #f2f5f7; --surface: #ffffff; --ink: #13202b; --muted: #5d6b77; --line: #d9e1e7;
-  --accent: #0f766e; --accent-ink: #ffffff; --accent-soft: #d8f0ec;
-  --late: #b42318; --late-soft: #fde4e1;
-  --soon: #8a5a00; --soon-soft: #fdf0bf;
-  --done: #15803d; --danger: #b42318;
-  --font: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
-    --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
-    --late: #ff9b8f; --late-soft: #44201c; --soon: #f6d268; --soon-soft: #3d3210;
-    --done: #5fd18a; --danger: #ff8a7a; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
   --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
   --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
   --late: #ff9b8f; --late-soft: #44201c; --soon: #f6d268; --soon-soft: #3d3210;
-  --done: #5fd18a; --danger: #ff8a7a; color-scheme: dark;
+  --done: #5fd18a; --danger: #ff8a7a;
+  --font: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -53,6 +39,10 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .btn.small { min-height: 38px; padding: 6px 14px; font-size: .9375rem; }
 .btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 .btn.filebtn { display: inline-flex; align-items: center; cursor: pointer; }
+.linkdanger { background: none; border: 0; color: var(--danger); font-weight: 600; padding: 6px 0; }
+.scard { cursor: pointer; }
+.scard:hover { border-color: var(--accent); }
+.hrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .scard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .scard .name { font-weight: 700; font-size: 1.1875rem; overflow-wrap: anywhere; }
@@ -62,7 +52,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .rem.late { background: var(--late-soft); color: var(--late); }
 .rem.soon { background: var(--soon-soft); color: var(--soon); }
 .rem .tag { font-weight: 700; font-size: .8125rem; white-space: nowrap; }
-.rem .what { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.rem .what { color: inherit; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
 .rem .round { font-size: .875rem; }
 .ok { color: var(--done); font-weight: 600; font-size: .9375rem; }
 .more { color: var(--muted); font-size: .875rem; }
@@ -111,7 +101,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     { key: "d7",  label: "7 วัน",  ms: 7 * 24 * 3600e3 },
     { key: "d21", label: "21 วัน", ms: 21 * 24 * 3600e3 }
   ];
-  var SOON_MS = 12 * 3600e3;      // yellow when a review is due within the next 12 hours
+  var SOON_MS = 24 * 3600e3;      // yellow when a review is due within the next 24 hours
   var MAX_REMS = 6;               // reminders shown per subject card before "+N more"
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
@@ -178,17 +168,20 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
   function blobToDataUrl(b) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(b); }); }
 
   // ---------- reminders ----------
+  // One entry per topic: red if any review is overdue, otherwise yellow if one is due within SOON_MS.
   function reminders(subject) {
     var now = Date.now(), out = [];
     subject.topics.forEach(function (t) {
+      var late = false, soon = false, first = Infinity;
       INTERVALS.forEach(function (iv) {
         if (t.checks[iv.key]) return;
         var due = t.at + iv.ms, diff = due - now;
-        if (diff <= 0) out.push({ t: t, iv: iv, due: due, late: true, text: "เลยกำหนด " + span(-diff) });
-        else if (diff <= SOON_MS) out.push({ t: t, iv: iv, due: due, late: false, text: "อีก " + span(diff) });
+        if (diff <= 0) { late = true; first = Math.min(first, due); }
+        else if (diff <= SOON_MS) { soon = true; first = Math.min(first, due); }
       });
+      if (late || soon) out.push({ t: t, late: late, due: first });
     });
-    out.sort(function (a, b) { return a.due - b.due; });
+    out.sort(function (a, b) { return (a.late === b.late ? 0 : a.late ? -1 : 1) || a.due - b.due; });
     return out;
   }
   function subj(id) { return state.subjects.filter(function (s) { return s.id === id; })[0]; }
@@ -281,25 +274,23 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
       var rems = reminders(s);
       var items = rems.slice(0, MAX_REMS).map(function (r) {
         return '<li class="rem ' + (r.late ? "late" : "soon") + '"><span class="tag">' + (r.late ? "เลยกำหนด" : "ใกล้ถึงเวลา") + '</span>' +
-          '<span class="what">' + esc(r.t.title) + '</span><span class="round">ทบทวน ' + r.iv.label + ' · ' + r.text + '</span></li>';
+          '<span class="what">' + esc(r.t.title) + '</span></li>';
       }).join("");
-      return '<section class="scard"><div><div class="name">' + esc(s.name) + '</div><div class="meta">' + s.topics.length + ' หัวข้อ</div></div>' +
-        (rems.length ? '<ul class="rems">' + items + '</ul>' + (rems.length > MAX_REMS ? '<div class="more">และอีก ' + (rems.length - MAX_REMS) + ' รายการในหน้าหัวข้อ</div>' : "")
-                     : '<div class="ok">✓ ไม่มีค้างทบทวน</div>') +
-        '<div class="row"><button class="btn small" data-topics="' + esc(s.id) + '">เข้าหัวข้อ</button>' +
-        '<button class="btn ghost small" data-lib="' + esc(s.id) + '">คลังรูป</button></div></section>';
+      return '<div class="scard" role="button" tabindex="0" data-topics="' + esc(s.id) + '"><div><div class="name">' + esc(s.name) + '</div><div class="meta">' + s.topics.length + ' หัวข้อ</div></div>' +
+        (rems.length ? '<ul class="rems">' + items + '</ul>' + (rems.length > MAX_REMS ? '<div class="more">และอีก ' + (rems.length - MAX_REMS) + ' หัวข้อ</div>' : "")
+                     : '<div class="ok">✓ ไม่มีค้างทบทวน</div>') + '</div>';
     }).join("");
-    return '<header><h1>ตารางทบทวนวิชา</h1><span class="status">บันทึกในเครื่องนี้</span></header>' +
+    return '<header><h1>ตารางทบทวนวิชา</h1><div class="hrow"><button class="btn ghost small" data-export="1">สำรองข้อมูล</button>' +
+      '<label class="btn ghost small filebtn" for="importFile">นำเข้าข้อมูล</label>' +
+      '<input type="file" id="importFile" accept=".json,application/json" hidden></div></header>' +
+      renderNotes() +
       '<form class="addrow" id="addSubject"><input type="text" id="subjectName" placeholder="ชื่อวิชา เช่น Database Systems" maxlength="80" autocomplete="off" aria-label="ชื่อวิชา">' +
       '<button class="btn" type="submit">+ เพิ่มวิชา</button></form>' +
       (state.subjects.length ? '<div class="stack">' + cards + '</div>' :
-        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” จากนั้นเลือกเข้าหัวข้อหรือคลังรูป</div>') +
-      renderTools();
+        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” แล้วกดที่กรอบวิชาเพื่อเข้าไป</div>');
   }
-  function renderTools() {
-    var h = '<div class="row"><button class="btn ghost small" data-export="1">สำรองข้อมูล (ดาวน์โหลดไฟล์)</button>' +
-      '<label class="btn ghost small filebtn" for="importFile">นำเข้าข้อมูลจากไฟล์</label>' +
-      '<input type="file" id="importFile" accept=".json,application/json" hidden></div>';
+  function renderNotes() {
+    var h = "";
     if (view.pending) {
       var p = view.pending;
       h += '<div class="note warn">ไฟล์นี้มี ' + p.state.subjects.length + ' วิชา, ' + countTopics(p.state) + ' หัวข้อ' + (p.images ? ', ' + p.images.length + ' รูป' : '') +
@@ -312,16 +303,17 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
   }
 
   function subjectHead(s) {
-    return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span><span class="status">บันทึกในเครื่องนี้</span></header>' +
+    var c = view.confirm === "s:" + s.id;
+    return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span>' +
+      '<button class="linkdanger" data-askdels="' + esc(s.id) + '">ลบวิชา</button></header>' +
       '<h1>' + esc(s.name) + '</h1>' +
+      (c ? '<div class="note warn">จะลบวิชานี้ พร้อมหัวข้อและรูปทั้งหมด ลบแล้วกู้คืนไม่ได้ (ถ้าเคยสำรองข้อมูลไว้ นำเข้าคืนได้) พิมพ์คำว่า <b>ยืนยัน</b> เพื่อลบ</div>' +
+           '<div class="addrow"><input type="text" id="delConfirm" placeholder="พิมพ์ ยืนยัน" autocomplete="off" aria-label="พิมพ์ยืนยันเพื่อลบวิชา">' +
+           '<button class="btn danger" id="delGo" data-dels="' + esc(s.id) + '" disabled>ลบวิชานี้</button>' +
+           '<button class="btn ghost" data-cancel="1">ไม่ลบ</button></div>' : '') +
+      (view.msg && view.tab === "topics" ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : '') +
       '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">หัวข้อทบทวน</button>' +
       '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังรูป</button></div>';
-  }
-  function subjectFoot(s) {
-    var c = view.confirm === "s:" + s.id;
-    return '<div class="row">' + (c
-      ? '<span>ลบวิชานี้ หัวข้อ และรูปทั้งหมด?</span><button class="btn danger small" data-dels="' + esc(s.id) + '">ลบวิชา</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
-      : '<button class="btn ghost small" data-askdels="' + esc(s.id) + '">ลบวิชานี้</button>') + '</div>';
   }
 
   function renderTopics(s) {
@@ -344,8 +336,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     return subjectHead(s) +
       '<form class="addrow" id="addTopic"><input type="text" id="topicTitle" placeholder="หัวข้อที่อ่าน เช่น Normalization" maxlength="120" autocomplete="off" aria-label="ชื่อหัวข้อ">' +
       '<input type="date" id="topicDate" value="' + todayStr() + '" aria-label="วันที่อ่าน"><button class="btn" type="submit">+ เพิ่มหัวข้อ</button></form>' +
-      (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนที่ 24 ชม. / 3 / 7 / 21 วัน</div>') +
-      subjectFoot(s);
+      (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนที่ 24 ชม. / 3 / 7 / 21 วัน</div>');
   }
 
   function renderLibShell(s) {
@@ -354,8 +345,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
              '<span class="meta" style="color:var(--muted);font-size:.875rem">ย่อรูปให้อัตโนมัติ เก็บในเครื่องนี้</span></div>'
            : '<div class="note warn">เบราว์เซอร์นี้เก็บรูปไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>') +
       '<div id="libBox"><div class="empty">กำลังโหลดรูป…</div></div>' +
-      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "") +
-      subjectFoot(s);
+      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "");
   }
   function loadLibrary(s) {
     if (!idb) return;
@@ -428,6 +418,8 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     else if (d.delimg) { view.confirm = null; imgDel(d.delimg).catch(function () {}).then(render); return; }
     else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); }
     else if (d.dels) {
+      var box = document.getElementById("delConfirm");
+      if (!box || box.value.trim() !== "ยืนยัน") return;
       var sid = d.dels;
       state.subjects = state.subjects.filter(function (x) { return x.id !== sid; });
       view.subjectId = null; view.confirm = null; persist();
@@ -445,6 +437,12 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     var tp = s.topics.filter(function (x) { return x.id === p[0]; })[0]; if (!tp) return;
     if (t.checked) tp.checks[p[1]] = Date.now(); else delete tp.checks[p[1]];
     persist(); render();
+  });
+  app.addEventListener("input", function (e) {
+    if (e.target.id === "delConfirm") { var go = document.getElementById("delGo"); if (go) go.disabled = e.target.value.trim() !== "ยืนยัน"; }
+  });
+  app.addEventListener("keydown", function (e) {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("scard")) { e.preventDefault(); e.target.click(); }
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && view.viewer) { view.viewer = null; render(); } });
 
