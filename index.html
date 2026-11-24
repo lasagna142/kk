@@ -87,6 +87,18 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .shot .acts { padding: 6px 8px 8px; display: flex; gap: 6px; flex-wrap: wrap; }
 .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
 .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec h2 { font-size: 1.0625rem; margin: 0; font-weight: 700; }
+.sec .hint { color: var(--muted); font-size: .875rem; }
+.files { display: flex; flex-direction: column; gap: 6px; }
+.frow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.ficon { width: 44px; height: 44px; border-radius: 8px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: .6875rem; font-weight: 700; color: var(--muted); overflow: hidden; border: 0; padding: 0; }
+.ficon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fname { font-weight: 600; overflow-wrap: anywhere; }
+.fmeta { color: var(--muted); font-size: .8125rem; }
+.facts { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.tgroup { font-weight: 600; margin-top: 6px; overflow-wrap: anywhere; }
+select { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; flex: 1 1 200px; min-width: 0; color: var(--ink); font: inherit; }
 @media (max-width: 460px) { .steps { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
@@ -105,7 +117,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
   var MAX_REMS = 6;               // reminders shown per subject card before "+N more"
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
-  var view = { subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null };
+  var view = { subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null, libTopic: "" };
   var app = document.getElementById("app");
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -211,7 +223,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     var work = idb ? imgAll().catch(function () { return []; }) : Promise.resolve([]);
     return work.then(function (recs) {
       return Promise.all(recs.map(function (r) {
-        return blobToDataUrl(r.blob).then(function (d) { return { id: r.id, subjectId: r.subjectId, name: r.name, at: r.at, data: d }; });
+        return blobToDataUrl(r.blob).then(function (d) { return { id: r.id, subjectId: r.subjectId, topicId: r.topicId || null, name: r.name, at: r.at, data: d }; });
       }));
     }).then(function (images) {
       var payload = { app: "review-tracker", version: 2, exportedAt: new Date().toISOString(), subjects: state.subjects, images: images };
@@ -221,7 +233,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
       a.download = "review-backup-" + todayStr() + ".json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-      view.msg = { text: "ดาวน์โหลดไฟล์สำรองแล้ว (" + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ, " + images.length + " รูป) ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลด", warn: false };
+      view.msg = { text: "ดาวน์โหลดไฟล์สำรองแล้ว (" + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ, " + images.length + " ไฟล์) ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลด", warn: false };
     }).catch(function () { view.msg = { text: "สำรองข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง", warn: true }; }).then(render);
   }
   function readImport(file) {
@@ -232,7 +244,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
       if (!parsed) { view.pending = null; view.msg = { text: "อ่านไฟล์นี้ไม่ได้ ใช้ได้เฉพาะไฟล์สำรองที่ดาวน์โหลดจากเว็บนี้", warn: true }; }
       else {
         var ids = {}; parsed.subjects.forEach(function (s) { ids[s.id] = true; });
-        var images = Array.isArray(raw.images) ? raw.images.filter(function (x) { return x && typeof x.data === "string" && x.data.indexOf("data:image/") === 0 && ids[x.subjectId]; }) : null;
+        var images = Array.isArray(raw.images) ? raw.images.filter(function (x) { return x && typeof x.data === "string" && x.data.indexOf("data:") === 0 && ids[x.subjectId]; }) : null;
         view.pending = { state: parsed, images: images };
         view.msg = null;
       }
@@ -248,13 +260,13 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     if (p.images && idb) {
       work = imgClear().then(function () {
         return p.images.reduce(function (chain, x) {
-          return chain.then(function () { return fetch(x.data).then(function (r) { return r.blob(); }).then(function (b) { return imgPut({ id: String(x.id || uid()), subjectId: x.subjectId, name: String(x.name || "image").slice(0, 120), type: b.type, blob: b, at: +x.at || Date.now() }); }); });
+          return chain.then(function () { return fetch(x.data).then(function (r) { return r.blob(); }).then(function (b) { return imgPut({ id: String(x.id || uid()), subjectId: x.subjectId, topicId: x.topicId || null, name: String(x.name || "file").slice(0, 160), type: b.type, blob: b, at: +x.at || Date.now() }); }); });
         }, Promise.resolve());
       });
     }
     return work.then(function () {
-      view.msg = { text: "นำเข้าข้อมูลแล้ว: " + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ" + (p.images ? ", " + p.images.length + " รูป" : ""), warn: false };
-    }).catch(function () { view.msg = { text: "นำเข้าข้อความแล้ว แต่นำเข้ารูปไม่สำเร็จ", warn: true }; }).then(render);
+      view.msg = { text: "นำเข้าข้อมูลแล้ว: " + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ" + (p.images ? ", " + p.images.length + " ไฟล์" : ""), warn: false };
+    }).catch(function () { view.msg = { text: "นำเข้าข้อความแล้ว แต่นำเข้าไฟล์ไม่สำเร็จ", warn: true }; }).then(render);
   }
 
   // ---------- render ----------
@@ -293,8 +305,8 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     var h = "";
     if (view.pending) {
       var p = view.pending;
-      h += '<div class="note warn">ไฟล์นี้มี ' + p.state.subjects.length + ' วิชา, ' + countTopics(p.state) + ' หัวข้อ' + (p.images ? ', ' + p.images.length + ' รูป' : '') +
-        ' การนำเข้าจะ <b>แทนที่ข้อมูลปัจจุบันทั้งหมด</b>' + (p.images ? ' (รวมรูปในคลัง)' : '') + ' (ตอนนี้มี ' + state.subjects.length + ' วิชา, ' + countTopics(state) +
+      h += '<div class="note warn">ไฟล์นี้มี ' + p.state.subjects.length + ' วิชา, ' + countTopics(p.state) + ' หัวข้อ' + (p.images ? ', ' + p.images.length + ' ไฟล์' : '') +
+        ' การนำเข้าจะ <b>แทนที่ข้อมูลปัจจุบันทั้งหมด</b>' + (p.images ? ' (รวมไฟล์ในคลัง)' : '') + ' (ตอนนี้มี ' + state.subjects.length + ' วิชา, ' + countTopics(state) +
         ' หัวข้อ) ถ้ากลัวเสียข้อมูลเดิม กดสำรองข้อมูลก่อน</div>' +
         '<div class="row"><button class="btn small" data-doimport="1">แทนที่ข้อมูลปัจจุบัน</button><button class="btn ghost small" data-cancelimport="1">ยกเลิก</button></div>';
     }
@@ -307,13 +319,13 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span>' +
       '<button class="linkdanger" data-askdels="' + esc(s.id) + '">ลบวิชา</button></header>' +
       '<h1>' + esc(s.name) + '</h1>' +
-      (c ? '<div class="note warn">จะลบวิชานี้ พร้อมหัวข้อและรูปทั้งหมด ลบแล้วกู้คืนไม่ได้ (ถ้าเคยสำรองข้อมูลไว้ นำเข้าคืนได้) พิมพ์คำว่า <b>ยืนยัน</b> เพื่อลบ</div>' +
+      (c ? '<div class="note warn">จะลบวิชานี้ พร้อมหัวข้อและไฟล์ทั้งหมด ลบแล้วกู้คืนไม่ได้ (ถ้าเคยสำรองข้อมูลไว้ นำเข้าคืนได้) พิมพ์คำว่า <b>ยืนยัน</b> เพื่อลบ</div>' +
            '<div class="addrow"><input type="text" id="delConfirm" placeholder="พิมพ์ ยืนยัน" autocomplete="off" aria-label="พิมพ์ยืนยันเพื่อลบวิชา">' +
            '<button class="btn danger" id="delGo" data-dels="' + esc(s.id) + '" disabled>ลบวิชานี้</button>' +
            '<button class="btn ghost" data-cancel="1">ไม่ลบ</button></div>' : '') +
       (view.msg && view.tab === "topics" ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : '') +
       '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">หัวข้อทบทวน</button>' +
-      '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังรูป</button></div>';
+      '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังไฟล์</button></div>';
   }
 
   function renderTopics(s) {
@@ -329,7 +341,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
       }).join("");
       var c = view.confirm === "t:" + t.id;
       return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) + '</div><div class="topic-date">อ่านเมื่อ ' + fmt(t.at) + '</div></div>' +
-        (c ? '<span class="row"><button class="btn danger small" data-delt="' + esc(t.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button></span>'
+        (c ? '<span class="row"><span class="fmeta">ลบหัวข้อ (รวมไฟล์ของหัวข้อ)?</span><button class="btn danger small" data-delt="' + esc(t.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button></span>'
            : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="ลบหัวข้อ">ลบ</button>') +
         '</div><div class="steps">' + steps + '</div></div>';
     }).join("");
@@ -339,45 +351,85 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
       (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนที่ 24 ชม. / 3 / 7 / 21 วัน</div>');
   }
 
+  function fmtSize(n) { return n < 1024 ? n + " B" : n < 1048576 ? Math.round(n / 1024) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
+  function extOf(name) { var m = /\.([A-Za-z0-9]{1,5})$/.exec(name); return m ? m[1].toUpperCase() : "ไฟล์"; }
+  var libCache = {};
+
   function renderLibShell(s) {
+    if (!idb) return subjectHead(s) + '<div class="note warn">เบราว์เซอร์นี้เก็บไฟล์ไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>';
+    var topics = s.topics.slice().sort(function (a, b) { return a.at - b.at; });
+    var opts = '<option value="">— เลือกหัวข้อก่อนอัปโหลด —</option>' + topics.map(function (t) {
+      return '<option value="' + esc(t.id) + '"' + (view.libTopic === t.id ? " selected" : "") + '>' + esc(t.title) + '</option>';
+    }).join("");
     return subjectHead(s) +
-      (idb ? '<div class="row"><label class="btn small filebtn" for="libFile">+ เพิ่มรูป</label><input type="file" id="libFile" accept="image/*" multiple hidden>' +
-             '<span class="meta" style="color:var(--muted);font-size:.875rem">ย่อรูปให้อัตโนมัติ เก็บในเครื่องนี้</span></div>'
-           : '<div class="note warn">เบราว์เซอร์นี้เก็บรูปไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>') +
-      '<div id="libBox"><div class="empty">กำลังโหลดรูป…</div></div>' +
+      '<section class="sec"><h2>คลังเก็บของ</h2><div class="hint">ไฟล์จิปาถะของวิชานี้ ไม่ผูกกับหัวข้อ</div>' +
+      '<div class="row"><label class="btn small filebtn" for="libFileGen">+ เพิ่มไฟล์</label><input type="file" id="libFileGen" multiple hidden></div>' +
+      '<div class="files" id="libGen"><div class="empty">กำลังโหลด…</div></div></section>' +
+      '<section class="sec"><h2>ไฟล์ตามหัวข้อ</h2><div class="hint">เลือกหัวข้อของวิชานี้ แล้วอัปโหลดเข้าหัวข้อนั้น จะหาไฟล์ง่ายขึ้น</div>' +
+      (topics.length
+        ? '<div class="addrow"><select id="libTopic" aria-label="หัวข้อ">' + opts + '</select><button class="btn small" data-uptopic="1">+ เพิ่มไฟล์เข้าหัวข้อ</button></div>' +
+          '<input type="file" id="libFileTopic" multiple hidden>'
+        : '<div class="note warn">ยังไม่มีหัวข้อในวิชานี้ ไปเพิ่มหัวข้อที่แท็บ “หัวข้อทบทวน” ก่อน</div>') +
+      '<div class="files" id="libTop"></div></section>' +
       (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "");
+  }
+  function fileRow(r) {
+    var isImg = /^image\//.test(r.type || "");
+    var icon = isImg && r.url ? '<button class="ficon" data-openf="' + esc(r.id) + '" aria-label="เปิดรูป"><img src="' + r.url + '" alt=""></button>' : '<div class="ficon">' + esc(extOf(r.name)) + '</div>';
+    var c = view.confirm === "i:" + r.id;
+    return '<div class="frow">' + icon + '<div><div class="fname">' + esc(r.name) + '</div><div class="fmeta">' + fmtSize(r.blob.size) + ' · ' + fmt(r.at) + '</div></div>' +
+      '<div class="facts"><button class="btn ghost small" data-openf="' + esc(r.id) + '">เปิด</button><button class="btn ghost small" data-dl="' + esc(r.id) + '">ดาวน์โหลด</button>' +
+      (c ? '<button class="btn danger small" data-delimg="' + esc(r.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
+         : '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">ลบ</button>') + '</div></div>';
   }
   function loadLibrary(s) {
     if (!idb) return;
     var sid = s.id;
     imgList(sid).then(function (list) {
       if (view.subjectId !== sid || view.tab !== "lib") return;
-      var box = document.getElementById("libBox"); if (!box) return;
-      revokeLib();
+      var gen = document.getElementById("libGen"), top = document.getElementById("libTop"); if (!gen || !top) return;
+      revokeLib(); libCache = {};
       list.sort(function (a, b) { return a.at - b.at; });
-      if (!list.length) { box.innerHTML = '<div class="empty">ยังไม่มีรูปในคลังของวิชานี้<br>กด “เพิ่มรูป” เพื่อเก็บสไลด์ โน้ต หรือรูปที่ถ่ายไว้</div>'; return; }
-      var html = '<div class="gallery">' + list.map(function (r) {
-        var url = URL.createObjectURL(r.blob); libUrls.push(url); r.url = url;
-        var c = view.confirm === "i:" + r.id;
-        return '<div class="shot"><button class="thumb" data-view="' + esc(r.id) + '" aria-label="ดูรูป"><img src="' + url + '" alt="' + esc(r.name) + '"></button>' +
-          '<div class="cap">' + esc(r.name) + '</div><div class="acts">' + (c
-            ? '<button class="btn danger small" data-delimg="' + esc(r.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
-            : '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">ลบ</button>') + '</div></div>';
-      }).join("") + '</div>';
-      var open = view.viewer && list.filter(function (r) { return r.id === view.viewer; })[0];
-      if (open) html += '<div class="viewer" data-closeviewer="1"><img src="' + open.url + '" alt="' + esc(open.name) + '"></div>';
-      box.innerHTML = html;
+      var topicIds = {}; s.topics.forEach(function (t) { topicIds[t.id] = t; });
+      list.forEach(function (r) { libCache[r.id] = r; if (/^image\//.test(r.type || "")) { r.url = URL.createObjectURL(r.blob); libUrls.push(r.url); } });
+      var general = list.filter(function (r) { return !r.topicId || !topicIds[r.topicId]; });
+      gen.innerHTML = general.length ? general.map(fileRow).join("") : '<div class="empty">ยังไม่มีไฟล์ในคลังเก็บของ</div>';
+      var topics = s.topics.slice().sort(function (a, b) { return a.at - b.at; }), html = "";
+      topics.forEach(function (t) {
+        var fs = list.filter(function (r) { return r.topicId === t.id; });
+        if (fs.length) html += '<div class="tgroup">' + esc(t.title) + ' (' + fs.length + ')</div>' + fs.map(fileRow).join("");
+      });
+      top.innerHTML = html || (s.topics.length ? '<div class="empty">ยังไม่มีไฟล์ในหัวข้อใดเลย</div>' : "");
+      var open = view.viewer && libCache[view.viewer];
+      if (open && open.url) app.insertAdjacentHTML("beforeend", '<div class="viewer" data-closeviewer="1"><img src="' + open.url + '" alt="' + esc(open.name) + '"></div>');
     }).catch(function () {
-      var box = document.getElementById("libBox"); if (box) box.innerHTML = '<div class="note warn">อ่านคลังรูปไม่ได้</div>';
+      var gen = document.getElementById("libGen"); if (gen) gen.innerHTML = '<div class="note warn">อ่านคลังไฟล์ไม่ได้</div>';
     });
   }
-  function addImages(files, sid) {
-    var list = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
-    if (!list.length) { view.msg = { text: "เลือกได้เฉพาะไฟล์รูป", warn: true }; render(); return; }
-    view.msg = { text: "กำลังเพิ่ม " + list.length + " รูป…", warn: false }; render();
+  function addFiles(files, sid, topicId) {
+    var list = Array.prototype.slice.call(files);
+    if (!list.length) return;
+    view.msg = { text: "กำลังเพิ่ม " + list.length + " ไฟล์…", warn: false }; render();
     list.reduce(function (chain, f) {
-      return chain.then(function () { return shrink(f).then(function (b) { return imgPut({ id: uid(), subjectId: sid, name: f.name.slice(0, 120), type: b.type, blob: b, at: Date.now() }); }); });
-    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "เพิ่มรูปไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
+      return chain.then(function () { return imgPut({ id: uid(), subjectId: sid, topicId: topicId || null, name: f.name.slice(0, 160), type: f.type || "", blob: f, at: Date.now() }); });
+    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "เพิ่มไฟล์ไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
+  }
+  function openFile(id) {
+    var r = libCache[id]; if (!r) return;
+    if (/^image\//.test(r.type || "")) { view.viewer = id; render(); return; }
+    var u = URL.createObjectURL(r.blob);
+    window.open(u, "_blank");
+    setTimeout(function () { URL.revokeObjectURL(u); }, 60000);
+  }
+  function downloadFile(id) {
+    var r = libCache[id]; if (!r) return;
+    var a = document.createElement("a"); a.href = URL.createObjectURL(r.blob); a.download = r.name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function delTopicFiles(sid, tid) {
+    if (!idb) return Promise.resolve();
+    return imgList(sid).then(function (l) { return Promise.all(l.filter(function (r) { return r.topicId === tid; }).map(function (r) { return imgDel(r.id); })); }).catch(function () {});
   }
 
   // ---------- events ----------
@@ -397,7 +449,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
       var inp = document.getElementById("topicTitle"); if (inp) inp.focus();
     }
   });
-  var SEL = "[data-topics],[data-lib],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-view],[data-closeviewer],[data-askdelimg],[data-delimg]";
+  var SEL = "[data-topics],[data-lib],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic]";
   app.addEventListener("click", function (e) {
     var el = e.target.closest(SEL);
     if (!el) return;
@@ -413,10 +465,16 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
     else if (d.askdels) view.confirm = "s:" + d.askdels;
     else if (d.askdelimg) view.confirm = "i:" + d.askdelimg;
     else if (d.cancel) view.confirm = null;
-    else if (d.view) view.viewer = d.view;
+    else if (d.openf) { openFile(d.openf); return; }
+    else if (d.dl) { downloadFile(d.dl); return; }
+    else if (d.uptopic) {
+      var sel = document.getElementById("libTopic");
+      if (!sel || !sel.value) { view.msg = { text: "เลือกหัวข้อก่อนอัปโหลดไฟล์ในส่วนไฟล์ตามหัวข้อ", warn: true }; }
+      else { var fi = document.getElementById("libFileTopic"); if (fi) fi.click(); return; }
+    }
     else if (d.closeviewer) view.viewer = null;
     else if (d.delimg) { view.confirm = null; imgDel(d.delimg).catch(function () {}).then(render); return; }
-    else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); }
+    else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); delTopicFiles(s.id, d.delt); }
     else if (d.dels) {
       var box = document.getElementById("delConfirm");
       if (!box || box.value.trim() !== "ยืนยัน") return;
@@ -430,7 +488,9 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
   app.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "importFile") { if (t.files && t.files[0]) readImport(t.files[0]); return; }
-    if (t.id === "libFile") { if (t.files && t.files.length && view.subjectId) addImages(t.files, view.subjectId); return; }
+    if (t.id === "libTopic") { view.libTopic = t.value; return; }
+    if (t.id === "libFileGen") { if (t.files && t.files.length && view.subjectId) addFiles(t.files, view.subjectId, null); return; }
+    if (t.id === "libFileTopic") { if (t.files && t.files.length && view.subjectId && view.libTopic) addFiles(t.files, view.subjectId, view.libTopic); return; }
     var c = t.getAttribute && t.getAttribute("data-check");
     if (!c) return;
     var p = c.split("|"), s = subj(view.subjectId); if (!s) return;
