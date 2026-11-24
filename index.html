@@ -4,49 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ตารางทบทวนวิชา</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one column. Subject cards -> inside a subject, one card per topic with 4 review ticks (24 ชม. / 3 / 7 / 21 วัน). */
+/* Layout: one column. Subjects stack top to bottom; each card lists what is overdue (red) or nearly due (yellow). */
 :root {
-  --bg: #f2f5f7;
-  --surface: #ffffff;
-  --ink: #13202b;
-  --muted: #5d6b77;
-  --line: #d9e1e7;
-  --accent: #0f766e;
-  --accent-ink: #ffffff;
-  --accent-soft: #d8f0ec;
-  --due: #b45309;
-  --due-soft: #fdecd3;
-  --done: #15803d;
-  --danger: #b42318;
+  --bg: #f2f5f7; --surface: #ffffff; --ink: #13202b; --muted: #5d6b77; --line: #d9e1e7;
+  --accent: #0f766e; --accent-ink: #ffffff; --accent-soft: #d8f0ec;
+  --late: #b42318; --late-soft: #fde4e1;
+  --soon: #8a5a00; --soon-soft: #fdf0bf;
+  --done: #15803d; --danger: #b42318;
   --font: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
     --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
-    --due: #f3a45a; --due-soft: #3a2a16; --done: #5fd18a; --danger: #ff8a7a;
-    color-scheme: dark;
+    --late: #ff9b8f; --late-soft: #44201c; --soon: #f6d268; --soon-soft: #3d3210;
+    --done: #5fd18a; --danger: #ff8a7a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
   --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
-  --due: #f3a45a; --due-soft: #3a2a16; --done: #5fd18a; --danger: #ff8a7a;
-  color-scheme: dark;
+  --late: #ff9b8f; --late-soft: #44201c; --soon: #f6d268; --soon-soft: #3d3210;
+  --done: #5fd18a; --danger: #ff8a7a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
-  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
   padding-block: 20px 56px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-h1 { font-size: 1.5rem; margin: 0; font-weight: 700; text-wrap: balance; min-width: 0; flex: 1; }
+h1 { font-size: 1.5rem; margin: 0; font-weight: 700; text-wrap: balance; min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .status { font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -54,55 +47,58 @@ button { cursor: pointer; }
 .back { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 6px 0; }
 .addrow { display: flex; gap: 8px; flex-wrap: wrap; }
 .addrow input[type=text] { flex: 1 1 200px; min-width: 0; }
-input[type=text], input[type=date] {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
-}
-.btn {
-  background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 10px 16px;
-  font-weight: 600; min-height: 44px;
-}
-.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
-.btn.small { min-height: 36px; padding: 6px 12px; font-size: .875rem; }
+input[type=text], input[type=date] { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; }
+.btn { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 600; min-height: 44px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+.btn.small { min-height: 38px; padding: 6px 14px; font-size: .9375rem; }
 .btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.subject {
-  text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
-  display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 110px;
-}
-.subject:hover { border-color: var(--accent); }
-.subject .name { font-weight: 700; font-size: 1.125rem; overflow-wrap: anywhere; }
-.subject .meta { color: var(--muted); font-size: .875rem; margin-top: auto; }
-.pill { display: inline-block; font-size: .8125rem; font-weight: 600; border-radius: 999px; padding: 2px 10px; }
-.pill.due { background: var(--due-soft); color: var(--due); }
-.pill.ok { background: var(--accent-soft); color: var(--accent); }
+.btn.filebtn { display: inline-flex; align-items: center; cursor: pointer; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.scard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.scard .name { font-weight: 700; font-size: 1.1875rem; overflow-wrap: anywhere; }
+.scard .meta { color: var(--muted); font-size: .875rem; }
+.rems { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rem { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; border-radius: 10px; padding: 8px 10px; }
+.rem.late { background: var(--late-soft); color: var(--late); }
+.rem.soon { background: var(--soon-soft); color: var(--soon); }
+.rem .tag { font-weight: 700; font-size: .8125rem; white-space: nowrap; }
+.rem .what { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.rem .round { font-size: .875rem; }
+.ok { color: var(--done); font-weight: 600; font-size: .9375rem; }
+.more { color: var(--muted); font-size: .875rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.sp { flex: 1; }
+.tabs { display: flex; gap: 8px; }
+.tab { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-weight: 600; min-height: 44px; }
+.tab.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .topic { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .topic-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
 .topic-title { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
 .topic-date { color: var(--muted); font-size: .8125rem; }
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.step {
-  display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0;
-  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); cursor: pointer;
-}
-.step.due { border-color: var(--due); background: var(--due-soft); }
+.step { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); cursor: pointer; }
+.step.late { border-color: var(--late); background: var(--late-soft); }
+.step.soon { border-color: var(--soon); background: var(--soon-soft); }
 .step.done { border-color: var(--done); }
 .step input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
 .step .lbl { font-weight: 600; font-size: .9375rem; }
 .step .when { font-size: .75rem; color: var(--muted); }
-.step.due .when { color: var(--due); font-weight: 600; }
+.step.late .when { color: var(--late); font-weight: 600; }
+.step.soon .when { color: var(--soon); font-weight: 600; }
 .step.done .when { color: var(--done); }
-[hidden] { display: none !important; }
-.tools { margin-top: 4px; }
-.btn.filebtn { display: inline-flex; align-items: center; cursor: pointer; }
-.note { background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 10px 12px; font-size: .9375rem; }
-.note.warn { background: var(--due-soft); }
 .empty { border: 1px dashed var(--line); border-radius: 14px; padding: 24px 16px; color: var(--muted); text-align: center; }
-.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.sp { flex: 1; }
+.note { background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; font-size: .9375rem; }
+.note.warn { background: var(--soon-soft); }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.shot { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.shot .thumb { border: 0; padding: 0; background: var(--bg); display: block; width: 100%; aspect-ratio: 1; }
+.shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shot .cap { font-size: .75rem; color: var(--muted); padding: 6px 8px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot .acts { padding: 6px 8px 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+.viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
 @media (max-width: 460px) { .steps { grid-template-columns: repeat(2, 1fr); } }
-@media (prefers-reduced-motion: no-preference) { .subject, .btn { transition: border-color .15s, opacity .15s; } }
 </style>
-
 </head>
 <body>
 <div class="wrap" id="app"></div>
@@ -110,16 +106,16 @@ input[type=text], input[type=date] {
 <script>
 (function () {
   var INTERVALS = [
-    { key: "d1",  label: "24 ชม.",  ms: 24 * 3600e3 },
-    { key: "d3",  label: "3 วัน",   ms: 3 * 24 * 3600e3 },
-    { key: "d7",  label: "7 วัน",   ms: 7 * 24 * 3600e3 },
-    { key: "d21", label: "21 วัน",  ms: 21 * 24 * 3600e3 }
+    { key: "d1",  label: "24 ชม.", ms: 24 * 3600e3 },
+    { key: "d3",  label: "3 วัน",  ms: 3 * 24 * 3600e3 },
+    { key: "d7",  label: "7 วัน",  ms: 7 * 24 * 3600e3 },
+    { key: "d21", label: "21 วัน", ms: 21 * 24 * 3600e3 }
   ];
+  var SOON_MS = 12 * 3600e3;      // yellow when a review is due within the next 12 hours
+  var MAX_REMS = 6;               // reminders shown per subject card before "+N more"
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
-  var view = { subjectId: null, confirm: null, pending: null, msg: null };
-  var mode = "loading"; // loading | cloud | local
-  var docRef = null, saving = Promise.resolve(), mountedCloud = false;
+  var view = { subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null };
   var app = document.getElementById("app");
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -130,18 +126,73 @@ input[type=text], input[type=date] {
     if (!dateStr || dateStr === todayStr()) return Date.now();
     var p = dateStr.split("-"); return new Date(+p[0], +p[1] - 1, +p[2], 8, 0).getTime();
   }
+  function span(ms) {
+    var h = Math.round(ms / 3600e3);
+    if (h < 1) return "ไม่ถึง 1 ชม.";
+    if (h < 48) return h + " ชม.";
+    return Math.round(ms / 86400e3) + " วัน";
+  }
 
-  // ---------- storage ----------
+  // ---------- text storage ----------
   function normalize(o) { return o && Array.isArray(o.subjects) ? o : { subjects: [] }; }
   function lsRead() { try { return normalize(JSON.parse(localStorage.getItem(LS_KEY))); } catch (e) { return { subjects: [] }; } }
-  function lsWrite() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
-  function persist() {
-    lsWrite();
-    if (mode === "cloud" && docRef) {
-      var json = JSON.stringify(state);
-      saving = saving.then(function () { return docRef.set({ json: json }); }).catch(function () { mode = "local"; render(); });
-    }
+  function persist() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { view.msg = { text: "บันทึกไม่สำเร็จ (พื้นที่เบราว์เซอร์เต็มหรือถูกปิด) ลองกดสำรองข้อมูลไว้ก่อน", warn: true }; } }
+
+  // ---------- image storage (IndexedDB) ----------
+  var idb = null, STORE = "imgs";
+  function openDb() {
+    return new Promise(function (res) {
+      try {
+        var r = indexedDB.open("review-lib", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore(STORE, { keyPath: "id" }).createIndex("subjectId", "subjectId"); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { res(null); };
+      } catch (e) { res(null); }
+    });
   }
+  function store(mode) { return idb.transaction(STORE, mode).objectStore(STORE); }
+  function rp(rq) { return new Promise(function (res, rej) { rq.onsuccess = function () { res(rq.result); }; rq.onerror = function () { rej(rq.error); }; }); }
+  function imgList(sid) { return rp(store("readonly").index("subjectId").getAll(sid)); }
+  function imgAll() { return rp(store("readonly").getAll()); }
+  function imgPut(rec) { return rp(store("readwrite").put(rec)); }
+  function imgDel(id) { return rp(store("readwrite").delete(id)); }
+  function imgClear() { return rp(store("readwrite").clear()); }
+  function imgDelSubject(sid) {
+    if (!idb) return Promise.resolve();
+    return imgList(sid).then(function (list) { return Promise.all(list.map(function (r) { return imgDel(r.id); })); }).catch(function () {});
+  }
+  function shrink(file) {
+    return new Promise(function (res) {
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+        var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+        c.toBlob(function (b) { URL.revokeObjectURL(url); res(b || file); }, "image/jpeg", 0.85);
+      };
+      im.onerror = function () { URL.revokeObjectURL(url); res(file); };
+      im.src = url;
+    });
+  }
+  function blobToDataUrl(b) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(b); }); }
+
+  // ---------- reminders ----------
+  function reminders(subject) {
+    var now = Date.now(), out = [];
+    subject.topics.forEach(function (t) {
+      INTERVALS.forEach(function (iv) {
+        if (t.checks[iv.key]) return;
+        var due = t.at + iv.ms, diff = due - now;
+        if (diff <= 0) out.push({ t: t, iv: iv, due: due, late: true, text: "เลยกำหนด " + span(-diff) });
+        else if (diff <= SOON_MS) out.push({ t: t, iv: iv, due: due, late: false, text: "อีก " + span(diff) });
+      });
+    });
+    out.sort(function (a, b) { return a.due - b.due; });
+    return out;
+  }
+  function subj(id) { return state.subjects.filter(function (s) { return s.id === id; })[0]; }
+  function countTopics(st) { return st.subjects.reduce(function (n, s) { return n + s.topics.length; }, 0); }
 
   // ---------- backup / restore ----------
   function cleanState(o) {
@@ -163,105 +214,180 @@ input[type=text], input[type=date] {
     }
     return out;
   }
-  function countTopics(st) { return st.subjects.reduce(function (n, s) { return n + s.topics.length; }, 0); }
   function exportFile() {
-    var payload = { app: "review-tracker", version: 1, exportedAt: new Date().toISOString(), subjects: state.subjects };
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "review-backup-" + todayStr() + ".json";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-    view.msg = { text: "ดาวน์โหลดไฟล์สำรองแล้ว (" + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ) ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลดของเบราว์เซอร์", warn: false };
+    var work = idb ? imgAll().catch(function () { return []; }) : Promise.resolve([]);
+    return work.then(function (recs) {
+      return Promise.all(recs.map(function (r) {
+        return blobToDataUrl(r.blob).then(function (d) { return { id: r.id, subjectId: r.subjectId, name: r.name, at: r.at, data: d }; });
+      }));
+    }).then(function (images) {
+      var payload = { app: "review-tracker", version: 2, exportedAt: new Date().toISOString(), subjects: state.subjects, images: images };
+      var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "review-backup-" + todayStr() + ".json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      view.msg = { text: "ดาวน์โหลดไฟล์สำรองแล้ว (" + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ, " + images.length + " รูป) ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลด", warn: false };
+    }).catch(function () { view.msg = { text: "สำรองข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง", warn: true }; }).then(render);
   }
   function readImport(file) {
     var r = new FileReader();
     r.onload = function () {
-      var parsed = null;
-      try { parsed = cleanState(JSON.parse(r.result)); } catch (e) {}
+      var raw = null, parsed = null;
+      try { raw = JSON.parse(r.result); parsed = cleanState(raw); } catch (e) {}
       if (!parsed) { view.pending = null; view.msg = { text: "อ่านไฟล์นี้ไม่ได้ ใช้ได้เฉพาะไฟล์สำรองที่ดาวน์โหลดจากเว็บนี้", warn: true }; }
-      else { view.pending = parsed; view.msg = null; }
+      else {
+        var ids = {}; parsed.subjects.forEach(function (s) { ids[s.id] = true; });
+        var images = Array.isArray(raw.images) ? raw.images.filter(function (x) { return x && typeof x.data === "string" && x.data.indexOf("data:image/") === 0 && ids[x.subjectId]; }) : null;
+        view.pending = { state: parsed, images: images };
+        view.msg = null;
+      }
       render();
     };
     r.onerror = function () { view.msg = { text: "เปิดไฟล์ไม่สำเร็จ ลองใหม่อีกครั้ง", warn: true }; render(); };
     r.readAsText(file);
   }
-
-  // ---------- helpers ----------
-  function dueCount(subject) {
-    var now = Date.now(), n = 0;
-    subject.topics.forEach(function (t) {
-      INTERVALS.forEach(function (iv) { if (!t.checks[iv.key] && t.at + iv.ms <= now) n++; });
-    });
-    return n;
+  function applyImport() {
+    var p = view.pending; view.pending = null;
+    state = p.state; persist();
+    var work = Promise.resolve();
+    if (p.images && idb) {
+      work = imgClear().then(function () {
+        return p.images.reduce(function (chain, x) {
+          return chain.then(function () { return fetch(x.data).then(function (r) { return r.blob(); }).then(function (b) { return imgPut({ id: String(x.id || uid()), subjectId: x.subjectId, name: String(x.name || "image").slice(0, 120), type: b.type, blob: b, at: +x.at || Date.now() }); }); });
+        }, Promise.resolve());
+      });
+    }
+    return work.then(function () {
+      view.msg = { text: "นำเข้าข้อมูลแล้ว: " + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ" + (p.images ? ", " + p.images.length + " รูป" : ""), warn: false };
+    }).catch(function () { view.msg = { text: "นำเข้าข้อความแล้ว แต่นำเข้ารูปไม่สำเร็จ", warn: true }; }).then(render);
   }
-  function subj(id) { return state.subjects.filter(function (s) { return s.id === id; })[0]; }
 
   // ---------- render ----------
-  function statusText() {
-    return mode === "cloud" ? "บันทึกออนไลน์แล้ว" : mode === "local" ? "บันทึกเฉพาะเครื่องนี้" : "กำลังโหลด…";
-  }
+  var libUrls = [];
+  function revokeLib() { libUrls.forEach(function (u) { URL.revokeObjectURL(u); }); libUrls = []; }
+
   function render() {
+    revokeLib();
     var s = view.subjectId ? subj(view.subjectId) : null;
-    if (view.subjectId && !s) { view.subjectId = null; }
-    app.innerHTML = s ? renderSubject(s) : renderHome();
+    if (view.subjectId && !s) view.subjectId = null;
+    app.innerHTML = !s ? renderHome() : view.tab === "lib" ? renderLibShell(s) : renderTopics(s);
+    if (s && view.tab === "lib") loadLibrary(s);
   }
+
   function renderHome() {
     var cards = state.subjects.map(function (s) {
-      var d = dueCount(s);
-      return '<button class="subject" data-open="' + esc(s.id) + '">' +
-        '<span class="name">' + esc(s.name) + '</span>' +
-        (d ? '<span class="pill due">ถึงกำหนดทบทวน ' + d + ' ครั้ง</span>' : '<span class="pill ok">ไม่มีค้างทบทวน</span>') +
-        '<span class="meta">' + s.topics.length + ' หัวข้อ</span></button>';
+      var rems = reminders(s);
+      var items = rems.slice(0, MAX_REMS).map(function (r) {
+        return '<li class="rem ' + (r.late ? "late" : "soon") + '"><span class="tag">' + (r.late ? "เลยกำหนด" : "ใกล้ถึงเวลา") + '</span>' +
+          '<span class="what">' + esc(r.t.title) + '</span><span class="round">ทบทวน ' + r.iv.label + ' · ' + r.text + '</span></li>';
+      }).join("");
+      return '<section class="scard"><div><div class="name">' + esc(s.name) + '</div><div class="meta">' + s.topics.length + ' หัวข้อ</div></div>' +
+        (rems.length ? '<ul class="rems">' + items + '</ul>' + (rems.length > MAX_REMS ? '<div class="more">และอีก ' + (rems.length - MAX_REMS) + ' รายการในหน้าหัวข้อ</div>' : "")
+                     : '<div class="ok">✓ ไม่มีค้างทบทวน</div>') +
+        '<div class="row"><button class="btn small" data-topics="' + esc(s.id) + '">เข้าหัวข้อ</button>' +
+        '<button class="btn ghost small" data-lib="' + esc(s.id) + '">คลังรูป</button></div></section>';
     }).join("");
-    return '<header><h1>ตารางทบทวนวิชา</h1><span class="status">' + statusText() + '</span></header>' +
+    return '<header><h1>ตารางทบทวนวิชา</h1><span class="status">บันทึกในเครื่องนี้</span></header>' +
       '<form class="addrow" id="addSubject"><input type="text" id="subjectName" placeholder="ชื่อวิชา เช่น Database Systems" maxlength="80" autocomplete="off" aria-label="ชื่อวิชา">' +
       '<button class="btn" type="submit">+ เพิ่มวิชา</button></form>' +
-      (state.subjects.length ? '<div class="grid">' + cards + '</div>' :
-        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” จากนั้นกดเข้าวิชาเพื่อเพิ่มหัวข้อที่อ่าน</div>') +
+      (state.subjects.length ? '<div class="stack">' + cards + '</div>' :
+        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” จากนั้นเลือกเข้าหัวข้อหรือคลังรูป</div>') +
       renderTools();
   }
   function renderTools() {
-    var h = '<div class="row tools"><button class="btn ghost small" data-export="1">สำรองข้อมูล (ดาวน์โหลดไฟล์)</button>' +
+    var h = '<div class="row"><button class="btn ghost small" data-export="1">สำรองข้อมูล (ดาวน์โหลดไฟล์)</button>' +
       '<label class="btn ghost small filebtn" for="importFile">นำเข้าข้อมูลจากไฟล์</label>' +
       '<input type="file" id="importFile" accept=".json,application/json" hidden></div>';
     if (view.pending) {
-      h += '<div class="note warn">ไฟล์นี้มี ' + view.pending.subjects.length + ' วิชา, ' + countTopics(view.pending) +
-        ' หัวข้อ การนำเข้าจะ <b>แทนที่ข้อมูลปัจจุบันทั้งหมด</b> (ตอนนี้มี ' + state.subjects.length + ' วิชา, ' + countTopics(state) +
+      var p = view.pending;
+      h += '<div class="note warn">ไฟล์นี้มี ' + p.state.subjects.length + ' วิชา, ' + countTopics(p.state) + ' หัวข้อ' + (p.images ? ', ' + p.images.length + ' รูป' : '') +
+        ' การนำเข้าจะ <b>แทนที่ข้อมูลปัจจุบันทั้งหมด</b>' + (p.images ? ' (รวมรูปในคลัง)' : '') + ' (ตอนนี้มี ' + state.subjects.length + ' วิชา, ' + countTopics(state) +
         ' หัวข้อ) ถ้ากลัวเสียข้อมูลเดิม กดสำรองข้อมูลก่อน</div>' +
         '<div class="row"><button class="btn small" data-doimport="1">แทนที่ข้อมูลปัจจุบัน</button><button class="btn ghost small" data-cancelimport="1">ยกเลิก</button></div>';
     }
     if (view.msg) h += '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>';
     return h;
   }
-  function renderSubject(s) {
-    var topics = s.topics.map(function (t) {
+
+  function subjectHead(s) {
+    return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span><span class="status">บันทึกในเครื่องนี้</span></header>' +
+      '<h1>' + esc(s.name) + '</h1>' +
+      '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">หัวข้อทบทวน</button>' +
+      '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังรูป</button></div>';
+  }
+  function subjectFoot(s) {
+    var c = view.confirm === "s:" + s.id;
+    return '<div class="row">' + (c
+      ? '<span>ลบวิชานี้ หัวข้อ และรูปทั้งหมด?</span><button class="btn danger small" data-dels="' + esc(s.id) + '">ลบวิชา</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
+      : '<button class="btn ghost small" data-askdels="' + esc(s.id) + '">ลบวิชานี้</button>') + '</div>';
+  }
+
+  function renderTopics(s) {
+    var sorted = s.topics.slice().sort(function (a, b) { return a.at - b.at; });
+    var topics = sorted.map(function (t) {
       var now = Date.now();
       var steps = INTERVALS.map(function (iv) {
-        var due = t.at + iv.ms, done = !!t.checks[iv.key], isDue = !done && due <= now;
-        var when = done ? "ทบทวนแล้ว" : isDue ? "ถึงกำหนด (" + fmt(due) + ")" : "ครบ " + fmt(due);
-        return '<label class="step' + (done ? " done" : isDue ? " due" : "") + '">' +
-          '<input type="checkbox" data-check="' + esc(t.id) + '|' + iv.key + '"' + (done ? " checked" : "") + '>' +
+        var due = t.at + iv.ms, diff = due - now, done = !!t.checks[iv.key];
+        var cls = done ? "done" : diff <= 0 ? "late" : diff <= SOON_MS ? "soon" : "";
+        var when = done ? "ทบทวนแล้ว" : diff <= 0 ? "เลยกำหนด" : diff <= SOON_MS ? "ใกล้ถึงเวลา" : "ครบ " + fmt(due);
+        return '<label class="step ' + cls + '"><input type="checkbox" data-check="' + esc(t.id) + '|' + iv.key + '"' + (done ? " checked" : "") + '>' +
           '<span class="lbl">' + iv.label + '</span><span class="when">' + when + '</span></label>';
       }).join("");
-      var confirming = view.confirm === "t:" + t.id;
-      return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) +
-        '</div><div class="topic-date">อ่านเมื่อ ' + fmt(t.at) + '</div></div>' +
-        (confirming
-          ? '<span class="row"><button class="btn danger small" data-delt="' + esc(t.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button></span>'
-          : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="ลบหัวข้อ">ลบ</button>') +
+      var c = view.confirm === "t:" + t.id;
+      return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) + '</div><div class="topic-date">อ่านเมื่อ ' + fmt(t.at) + '</div></div>' +
+        (c ? '<span class="row"><button class="btn danger small" data-delt="' + esc(t.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button></span>'
+           : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="ลบหัวข้อ">ลบ</button>') +
         '</div><div class="steps">' + steps + '</div></div>';
     }).join("");
-    var confirmingS = view.confirm === "s:" + s.id;
-    return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span><span class="status">' + statusText() + '</span></header>' +
-      '<h1>' + esc(s.name) + '</h1>' +
+    return subjectHead(s) +
       '<form class="addrow" id="addTopic"><input type="text" id="topicTitle" placeholder="หัวข้อที่อ่าน เช่น Normalization" maxlength="120" autocomplete="off" aria-label="ชื่อหัวข้อ">' +
-      '<input type="date" id="topicDate" value="' + todayStr() + '" aria-label="วันที่อ่าน">' +
-      '<button class="btn" type="submit">+ เพิ่มหัวข้อ</button></form>' +
-      (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนให้ที่ 24 ชม. / 3 / 7 / 21 วัน</div>') +
-      '<div class="row">' + (confirmingS
-        ? '<span>ลบวิชานี้และทุกหัวข้อ?</span><button class="btn danger small" data-dels="' + esc(s.id) + '">ลบวิชา</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
-        : '<button class="btn ghost small" data-askdels="' + esc(s.id) + '">ลบวิชานี้</button>') + '</div>';
+      '<input type="date" id="topicDate" value="' + todayStr() + '" aria-label="วันที่อ่าน"><button class="btn" type="submit">+ เพิ่มหัวข้อ</button></form>' +
+      (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนที่ 24 ชม. / 3 / 7 / 21 วัน</div>') +
+      subjectFoot(s);
+  }
+
+  function renderLibShell(s) {
+    return subjectHead(s) +
+      (idb ? '<div class="row"><label class="btn small filebtn" for="libFile">+ เพิ่มรูป</label><input type="file" id="libFile" accept="image/*" multiple hidden>' +
+             '<span class="meta" style="color:var(--muted);font-size:.875rem">ย่อรูปให้อัตโนมัติ เก็บในเครื่องนี้</span></div>'
+           : '<div class="note warn">เบราว์เซอร์นี้เก็บรูปไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>') +
+      '<div id="libBox"><div class="empty">กำลังโหลดรูป…</div></div>' +
+      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "") +
+      subjectFoot(s);
+  }
+  function loadLibrary(s) {
+    if (!idb) return;
+    var sid = s.id;
+    imgList(sid).then(function (list) {
+      if (view.subjectId !== sid || view.tab !== "lib") return;
+      var box = document.getElementById("libBox"); if (!box) return;
+      revokeLib();
+      list.sort(function (a, b) { return a.at - b.at; });
+      if (!list.length) { box.innerHTML = '<div class="empty">ยังไม่มีรูปในคลังของวิชานี้<br>กด “เพิ่มรูป” เพื่อเก็บสไลด์ โน้ต หรือรูปที่ถ่ายไว้</div>'; return; }
+      var html = '<div class="gallery">' + list.map(function (r) {
+        var url = URL.createObjectURL(r.blob); libUrls.push(url); r.url = url;
+        var c = view.confirm === "i:" + r.id;
+        return '<div class="shot"><button class="thumb" data-view="' + esc(r.id) + '" aria-label="ดูรูป"><img src="' + url + '" alt="' + esc(r.name) + '"></button>' +
+          '<div class="cap">' + esc(r.name) + '</div><div class="acts">' + (c
+            ? '<button class="btn danger small" data-delimg="' + esc(r.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
+            : '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">ลบ</button>') + '</div></div>';
+      }).join("") + '</div>';
+      var open = view.viewer && list.filter(function (r) { return r.id === view.viewer; })[0];
+      if (open) html += '<div class="viewer" data-closeviewer="1"><img src="' + open.url + '" alt="' + esc(open.name) + '"></div>';
+      box.innerHTML = html;
+    }).catch(function () {
+      var box = document.getElementById("libBox"); if (box) box.innerHTML = '<div class="note warn">อ่านคลังรูปไม่ได้</div>';
+    });
+  }
+  function addImages(files, sid) {
+    var list = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
+    if (!list.length) { view.msg = { text: "เลือกได้เฉพาะไฟล์รูป", warn: true }; render(); return; }
+    view.msg = { text: "กำลังเพิ่ม " + list.length + " รูป…", warn: false }; render();
+    list.reduce(function (chain, f) {
+      return chain.then(function () { return shrink(f).then(function (b) { return imgPut({ id: uid(), subjectId: sid, name: f.name.slice(0, 120), type: b.type, blob: b, at: Date.now() }); }); });
+    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "เพิ่มรูปไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
   }
 
   // ---------- events ----------
@@ -271,73 +397,61 @@ input[type=text], input[type=date] {
       var name = document.getElementById("subjectName").value.trim();
       if (!name) return;
       state.subjects.push({ id: uid(), name: name, topics: [] });
-      persist(); render();
+      view.msg = null; persist(); render();
     } else if (e.target.id === "addTopic") {
       var title = document.getElementById("topicTitle").value.trim();
       if (!title) return;
       var s = subj(view.subjectId); if (!s) return;
-      s.topics.unshift({ id: uid(), title: title, at: stampFor(document.getElementById("topicDate").value), checks: {} });
+      s.topics.push({ id: uid(), title: title, at: stampFor(document.getElementById("topicDate").value), checks: {} });
       persist(); render();
       var inp = document.getElementById("topicTitle"); if (inp) inp.focus();
     }
   });
+  var SEL = "[data-topics],[data-lib],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-view],[data-closeviewer],[data-askdelimg],[data-delimg]";
   app.addEventListener("click", function (e) {
-    var el = e.target.closest("[data-open],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport]");
+    var el = e.target.closest(SEL);
     if (!el) return;
-    var d = el.dataset;
-    if (!d.export && !d.doimport && !d.cancelimport) { view.msg = null; view.pending = null; }
-    if (d.export) { view.pending = null; exportFile(); }
-    else if (d.doimport) { state = view.pending; view.pending = null; view.msg = { text: "นำเข้าข้อมูลแล้ว: " + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ", warn: false }; persist(); }
-    else if (d.cancelimport) { view.pending = null; }
-    else if (d.open) { view.subjectId = d.open; view.confirm = null; location.hash = "subject"; }
-    else if (d.home) { view.subjectId = null; view.confirm = null; location.hash = ""; }
+    var d = el.dataset, keepMsg = d.export || d.doimport || d.cancelimport;
+    if (!keepMsg) { view.msg = null; view.pending = null; }
+    if (d.export) { view.pending = null; exportFile(); return; }
+    if (d.doimport) { applyImport(); return; }
+    if (d.cancelimport) view.pending = null;
+    else if (d.topics) { view.subjectId = d.topics; view.tab = "topics"; view.confirm = null; view.viewer = null; }
+    else if (d.lib) { view.subjectId = d.lib; view.tab = "lib"; view.confirm = null; view.viewer = null; }
+    else if (d.home) { view.subjectId = null; view.confirm = null; view.viewer = null; }
     else if (d.askdelt) view.confirm = "t:" + d.askdelt;
     else if (d.askdels) view.confirm = "s:" + d.askdels;
+    else if (d.askdelimg) view.confirm = "i:" + d.askdelimg;
     else if (d.cancel) view.confirm = null;
+    else if (d.view) view.viewer = d.view;
+    else if (d.closeviewer) view.viewer = null;
+    else if (d.delimg) { view.confirm = null; imgDel(d.delimg).catch(function () {}).then(render); return; }
     else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); }
-    else if (d.dels) { state.subjects = state.subjects.filter(function (x) { return x.id !== d.dels; }); view.subjectId = null; view.confirm = null; persist(); }
+    else if (d.dels) {
+      var sid = d.dels;
+      state.subjects = state.subjects.filter(function (x) { return x.id !== sid; });
+      view.subjectId = null; view.confirm = null; persist();
+      imgDelSubject(sid);
+    }
     render();
   });
   app.addEventListener("change", function (e) {
-    if (e.target.id === "importFile") {
-      var f = e.target.files && e.target.files[0];
-      if (f) readImport(f);
-      return;
-    }
-    var c = e.target.getAttribute && e.target.getAttribute("data-check");
+    var t = e.target;
+    if (t.id === "importFile") { if (t.files && t.files[0]) readImport(t.files[0]); return; }
+    if (t.id === "libFile") { if (t.files && t.files.length && view.subjectId) addImages(t.files, view.subjectId); return; }
+    var c = t.getAttribute && t.getAttribute("data-check");
     if (!c) return;
     var p = c.split("|"), s = subj(view.subjectId); if (!s) return;
-    var t = s.topics.filter(function (x) { return x.id === p[0]; })[0]; if (!t) return;
-    if (e.target.checked) t.checks[p[1]] = Date.now(); else delete t.checks[p[1]];
+    var tp = s.topics.filter(function (x) { return x.id === p[0]; })[0]; if (!tp) return;
+    if (t.checked) tp.checks[p[1]] = Date.now(); else delete tp.checks[p[1]];
     persist(); render();
   });
-  window.addEventListener("hashchange", function () {
-    if (!location.hash && view.subjectId) { view.subjectId = null; render(); }
-  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && view.viewer) { view.viewer = null; render(); } });
 
   // ---------- boot ----------
   state = lsRead();
   render();
-  var timer = setTimeout(function () { if (mode === "loading") { mode = "local"; render(); } }, 10000);
-
-  if (window.claude && window.claude.use) {
-    window.claude.use("db").then(function (db) {
-      if (!db) { if (mode === "loading") { mode = "local"; render(); } return; }
-      docRef = db.doc("app/state");
-      docRef.onSnapshot(function (snap) {
-        clearTimeout(timer);
-        if (snap.metadata && snap.metadata.hasPendingWrites) return;
-        var remote = snap.exists && snap.data() && snap.data().json;
-        if (remote) {
-          try { state = normalize(JSON.parse(remote)); lsWrite(); } catch (e) {}
-        } else if (state.subjects.length) {
-          // first cloud run: push what this browser already had
-          docRef.set({ json: JSON.stringify(state) }).catch(function () {});
-        }
-        mode = "cloud"; render();
-      }, function () { clearTimeout(timer); mode = "local"; render(); });
-    }, function () { if (mode === "loading") { mode = "local"; render(); } });
-  } else { mode = "local"; render(); }
+  openDb().then(function (db) { idb = db; if (view.subjectId && view.tab === "lib") render(); });
 })();
 </script>
 </body>
