@@ -91,6 +91,11 @@ input[type=text], input[type=date] {
 .step .when { font-size: .75rem; color: var(--muted); }
 .step.due .when { color: var(--due); font-weight: 600; }
 .step.done .when { color: var(--done); }
+[hidden] { display: none !important; }
+.tools { margin-top: 4px; }
+.btn.filebtn { display: inline-flex; align-items: center; cursor: pointer; }
+.note { background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 10px 12px; font-size: .9375rem; }
+.note.warn { background: var(--due-soft); }
 .empty { border: 1px dashed var(--line); border-radius: 14px; padding: 24px 16px; color: var(--muted); text-align: center; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .sp { flex: 1; }
@@ -112,7 +117,7 @@ input[type=text], input[type=date] {
   ];
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
-  var view = { subjectId: null, confirm: null };
+  var view = { subjectId: null, confirm: null, pending: null, msg: null };
   var mode = "loading"; // loading | cloud | local
   var docRef = null, saving = Promise.resolve(), mountedCloud = false;
   var app = document.getElementById("app");
@@ -136,6 +141,50 @@ input[type=text], input[type=date] {
       var json = JSON.stringify(state);
       saving = saving.then(function () { return docRef.set({ json: json }); }).catch(function () { mode = "local"; render(); });
     }
+  }
+
+  // ---------- backup / restore ----------
+  function cleanState(o) {
+    if (!o || !Array.isArray(o.subjects)) return null;
+    var out = { subjects: [] };
+    for (var i = 0; i < o.subjects.length; i++) {
+      var s = o.subjects[i];
+      if (!s || typeof s.name !== "string") return null;
+      var subject = { id: typeof s.id === "string" ? s.id : uid(), name: s.name.slice(0, 80), topics: [] };
+      var topics = Array.isArray(s.topics) ? s.topics : [];
+      for (var j = 0; j < topics.length; j++) {
+        var t = topics[j];
+        if (!t || typeof t.title !== "string") return null;
+        var checks = {};
+        INTERVALS.forEach(function (iv) { if (t.checks && t.checks[iv.key]) checks[iv.key] = +t.checks[iv.key] || Date.now(); });
+        subject.topics.push({ id: typeof t.id === "string" ? t.id : uid(), title: t.title.slice(0, 120), at: +t.at || Date.now(), checks: checks });
+      }
+      out.subjects.push(subject);
+    }
+    return out;
+  }
+  function countTopics(st) { return st.subjects.reduce(function (n, s) { return n + s.topics.length; }, 0); }
+  function exportFile() {
+    var payload = { app: "review-tracker", version: 1, exportedAt: new Date().toISOString(), subjects: state.subjects };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "review-backup-" + todayStr() + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    view.msg = { text: "ดาวน์โหลดไฟล์สำรองแล้ว (" + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ) ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลดของเบราว์เซอร์", warn: false };
+  }
+  function readImport(file) {
+    var r = new FileReader();
+    r.onload = function () {
+      var parsed = null;
+      try { parsed = cleanState(JSON.parse(r.result)); } catch (e) {}
+      if (!parsed) { view.pending = null; view.msg = { text: "อ่านไฟล์นี้ไม่ได้ ใช้ได้เฉพาะไฟล์สำรองที่ดาวน์โหลดจากเว็บนี้", warn: true }; }
+      else { view.pending = parsed; view.msg = null; }
+      render();
+    };
+    r.onerror = function () { view.msg = { text: "เปิดไฟล์ไม่สำเร็จ ลองใหม่อีกครั้ง", warn: true }; render(); };
+    r.readAsText(file);
   }
 
   // ---------- helpers ----------
@@ -169,7 +218,21 @@ input[type=text], input[type=date] {
       '<form class="addrow" id="addSubject"><input type="text" id="subjectName" placeholder="ชื่อวิชา เช่น Database Systems" maxlength="80" autocomplete="off" aria-label="ชื่อวิชา">' +
       '<button class="btn" type="submit">+ เพิ่มวิชา</button></form>' +
       (state.subjects.length ? '<div class="grid">' + cards + '</div>' :
-        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” จากนั้นกดเข้าวิชาเพื่อเพิ่มหัวข้อที่อ่าน</div>');
+        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” จากนั้นกดเข้าวิชาเพื่อเพิ่มหัวข้อที่อ่าน</div>') +
+      renderTools();
+  }
+  function renderTools() {
+    var h = '<div class="row tools"><button class="btn ghost small" data-export="1">สำรองข้อมูล (ดาวน์โหลดไฟล์)</button>' +
+      '<label class="btn ghost small filebtn" for="importFile">นำเข้าข้อมูลจากไฟล์</label>' +
+      '<input type="file" id="importFile" accept=".json,application/json" hidden></div>';
+    if (view.pending) {
+      h += '<div class="note warn">ไฟล์นี้มี ' + view.pending.subjects.length + ' วิชา, ' + countTopics(view.pending) +
+        ' หัวข้อ การนำเข้าจะ <b>แทนที่ข้อมูลปัจจุบันทั้งหมด</b> (ตอนนี้มี ' + state.subjects.length + ' วิชา, ' + countTopics(state) +
+        ' หัวข้อ) ถ้ากลัวเสียข้อมูลเดิม กดสำรองข้อมูลก่อน</div>' +
+        '<div class="row"><button class="btn small" data-doimport="1">แทนที่ข้อมูลปัจจุบัน</button><button class="btn ghost small" data-cancelimport="1">ยกเลิก</button></div>';
+    }
+    if (view.msg) h += '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>';
+    return h;
   }
   function renderSubject(s) {
     var topics = s.topics.map(function (t) {
@@ -219,10 +282,14 @@ input[type=text], input[type=date] {
     }
   });
   app.addEventListener("click", function (e) {
-    var el = e.target.closest("[data-open],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel]");
+    var el = e.target.closest("[data-open],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport]");
     if (!el) return;
     var d = el.dataset;
-    if (d.open) { view.subjectId = d.open; view.confirm = null; location.hash = "subject"; }
+    if (!d.export && !d.doimport && !d.cancelimport) { view.msg = null; view.pending = null; }
+    if (d.export) { view.pending = null; exportFile(); }
+    else if (d.doimport) { state = view.pending; view.pending = null; view.msg = { text: "นำเข้าข้อมูลแล้ว: " + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ", warn: false }; persist(); }
+    else if (d.cancelimport) { view.pending = null; }
+    else if (d.open) { view.subjectId = d.open; view.confirm = null; location.hash = "subject"; }
     else if (d.home) { view.subjectId = null; view.confirm = null; location.hash = ""; }
     else if (d.askdelt) view.confirm = "t:" + d.askdelt;
     else if (d.askdels) view.confirm = "s:" + d.askdels;
@@ -232,6 +299,11 @@ input[type=text], input[type=date] {
     render();
   });
   app.addEventListener("change", function (e) {
+    if (e.target.id === "importFile") {
+      var f = e.target.files && e.target.files[0];
+      if (f) readImport(f);
+      return;
+    }
     var c = e.target.getAttribute && e.target.getAttribute("data-check");
     if (!c) return;
     var p = c.split("|"), s = subj(view.subjectId); if (!s) return;
