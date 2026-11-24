@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ตารางทบทวนวิชา</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column. Subject cards -> inside a subject, one card per topic with 4 review ticks (24 ชม. / 3 / 7 / 21 วัน). */
+:root {
+  --bg: #f2f5f7;
+  --surface: #ffffff;
+  --ink: #13202b;
+  --muted: #5d6b77;
+  --line: #d9e1e7;
+  --accent: #0f766e;
+  --accent-ink: #ffffff;
+  --accent-soft: #d8f0ec;
+  --due: #b45309;
+  --due-soft: #fdecd3;
+  --done: #15803d;
+  --danger: #b42318;
+  --font: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
+    --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
+    --due: #f3a45a; --due-soft: #3a2a16; --done: #5fd18a; --danger: #ff8a7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
+  --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
+  --due: #f3a45a; --due-soft: #3a2a16; --done: #5fd18a; --danger: #ff8a7a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+h1 { font-size: 1.5rem; margin: 0; font-weight: 700; text-wrap: balance; min-width: 0; flex: 1; }
+.status { font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.back { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 6px 0; }
+.addrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.addrow input[type=text] { flex: 1 1 200px; min-width: 0; }
+input[type=text], input[type=date] {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px;
+}
+.btn {
+  background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 10px 16px;
+  font-weight: 600; min-height: 44px;
+}
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
+.btn.small { min-height: 36px; padding: 6px 12px; font-size: .875rem; }
+.btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.subject {
+  text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 110px;
+}
+.subject:hover { border-color: var(--accent); }
+.subject .name { font-weight: 700; font-size: 1.125rem; overflow-wrap: anywhere; }
+.subject .meta { color: var(--muted); font-size: .875rem; margin-top: auto; }
+.pill { display: inline-block; font-size: .8125rem; font-weight: 600; border-radius: 999px; padding: 2px 10px; }
+.pill.due { background: var(--due-soft); color: var(--due); }
+.pill.ok { background: var(--accent-soft); color: var(--accent); }
+.topic { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.topic-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.topic-title { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.topic-date { color: var(--muted); font-size: .8125rem; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.step {
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0;
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); cursor: pointer;
+}
+.step.due { border-color: var(--due); background: var(--due-soft); }
+.step.done { border-color: var(--done); }
+.step input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
+.step .lbl { font-weight: 600; font-size: .9375rem; }
+.step .when { font-size: .75rem; color: var(--muted); }
+.step.due .when { color: var(--due); font-weight: 600; }
+.step.done .when { color: var(--done); }
+.empty { border: 1px dashed var(--line); border-radius: 14px; padding: 24px 16px; color: var(--muted); text-align: center; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.sp { flex: 1; }
+@media (max-width: 460px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+@media (prefers-reduced-motion: no-preference) { .subject, .btn { transition: border-color .15s, opacity .15s; } }
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+(function () {
+  var INTERVALS = [
+    { key: "d1",  label: "24 ชม.",  ms: 24 * 3600e3 },
+    { key: "d3",  label: "3 วัน",   ms: 3 * 24 * 3600e3 },
+    { key: "d7",  label: "7 วัน",   ms: 7 * 24 * 3600e3 },
+    { key: "d21", label: "21 วัน",  ms: 21 * 24 * 3600e3 }
+  ];
+  var LS_KEY = "review-tracker-v1";
+  var state = { subjects: [] };
+  var view = { subjectId: null, confirm: null };
+  var mode = "loading"; // loading | cloud | local
+  var docRef = null, saving = Promise.resolve(), mountedCloud = false;
+  var app = document.getElementById("app");
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+  function fmt(ts) { return new Date(ts).toLocaleDateString("th-TH", { day: "numeric", month: "short" }); }
+  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function stampFor(dateStr) {
+    if (!dateStr || dateStr === todayStr()) return Date.now();
+    var p = dateStr.split("-"); return new Date(+p[0], +p[1] - 1, +p[2], 8, 0).getTime();
+  }
+
+  // ---------- storage ----------
+  function normalize(o) { return o && Array.isArray(o.subjects) ? o : { subjects: [] }; }
+  function lsRead() { try { return normalize(JSON.parse(localStorage.getItem(LS_KEY))); } catch (e) { return { subjects: [] }; } }
+  function lsWrite() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
+  function persist() {
+    lsWrite();
+    if (mode === "cloud" && docRef) {
+      var json = JSON.stringify(state);
+      saving = saving.then(function () { return docRef.set({ json: json }); }).catch(function () { mode = "local"; render(); });
+    }
+  }
+
+  // ---------- helpers ----------
+  function dueCount(subject) {
+    var now = Date.now(), n = 0;
+    subject.topics.forEach(function (t) {
+      INTERVALS.forEach(function (iv) { if (!t.checks[iv.key] && t.at + iv.ms <= now) n++; });
+    });
+    return n;
+  }
+  function subj(id) { return state.subjects.filter(function (s) { return s.id === id; })[0]; }
+
+  // ---------- render ----------
+  function statusText() {
+    return mode === "cloud" ? "บันทึกออนไลน์แล้ว" : mode === "local" ? "บันทึกเฉพาะเครื่องนี้" : "กำลังโหลด…";
+  }
+  function render() {
+    var s = view.subjectId ? subj(view.subjectId) : null;
+    if (view.subjectId && !s) { view.subjectId = null; }
+    app.innerHTML = s ? renderSubject(s) : renderHome();
+  }
+  function renderHome() {
+    var cards = state.subjects.map(function (s) {
+      var d = dueCount(s);
+      return '<button class="subject" data-open="' + esc(s.id) + '">' +
+        '<span class="name">' + esc(s.name) + '</span>' +
+        (d ? '<span class="pill due">ถึงกำหนดทบทวน ' + d + ' ครั้ง</span>' : '<span class="pill ok">ไม่มีค้างทบทวน</span>') +
+        '<span class="meta">' + s.topics.length + ' หัวข้อ</span></button>';
+    }).join("");
+    return '<header><h1>ตารางทบทวนวิชา</h1><span class="status">' + statusText() + '</span></header>' +
+      '<form class="addrow" id="addSubject"><input type="text" id="subjectName" placeholder="ชื่อวิชา เช่น Database Systems" maxlength="80" autocomplete="off" aria-label="ชื่อวิชา">' +
+      '<button class="btn" type="submit">+ เพิ่มวิชา</button></form>' +
+      (state.subjects.length ? '<div class="grid">' + cards + '</div>' :
+        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” จากนั้นกดเข้าวิชาเพื่อเพิ่มหัวข้อที่อ่าน</div>');
+  }
+  function renderSubject(s) {
+    var topics = s.topics.map(function (t) {
+      var now = Date.now();
+      var steps = INTERVALS.map(function (iv) {
+        var due = t.at + iv.ms, done = !!t.checks[iv.key], isDue = !done && due <= now;
+        var when = done ? "ทบทวนแล้ว" : isDue ? "ถึงกำหนด (" + fmt(due) + ")" : "ครบ " + fmt(due);
+        return '<label class="step' + (done ? " done" : isDue ? " due" : "") + '">' +
+          '<input type="checkbox" data-check="' + esc(t.id) + '|' + iv.key + '"' + (done ? " checked" : "") + '>' +
+          '<span class="lbl">' + iv.label + '</span><span class="when">' + when + '</span></label>';
+      }).join("");
+      var confirming = view.confirm === "t:" + t.id;
+      return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) +
+        '</div><div class="topic-date">อ่านเมื่อ ' + fmt(t.at) + '</div></div>' +
+        (confirming
+          ? '<span class="row"><button class="btn danger small" data-delt="' + esc(t.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button></span>'
+          : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="ลบหัวข้อ">ลบ</button>') +
+        '</div><div class="steps">' + steps + '</div></div>';
+    }).join("");
+    var confirmingS = view.confirm === "s:" + s.id;
+    return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span><span class="status">' + statusText() + '</span></header>' +
+      '<h1>' + esc(s.name) + '</h1>' +
+      '<form class="addrow" id="addTopic"><input type="text" id="topicTitle" placeholder="หัวข้อที่อ่าน เช่น Normalization" maxlength="120" autocomplete="off" aria-label="ชื่อหัวข้อ">' +
+      '<input type="date" id="topicDate" value="' + todayStr() + '" aria-label="วันที่อ่าน">' +
+      '<button class="btn" type="submit">+ เพิ่มหัวข้อ</button></form>' +
+      (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนให้ที่ 24 ชม. / 3 / 7 / 21 วัน</div>') +
+      '<div class="row">' + (confirmingS
+        ? '<span>ลบวิชานี้และทุกหัวข้อ?</span><button class="btn danger small" data-dels="' + esc(s.id) + '">ลบวิชา</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
+        : '<button class="btn ghost small" data-askdels="' + esc(s.id) + '">ลบวิชานี้</button>') + '</div>';
+  }
+
+  // ---------- events ----------
+  app.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (e.target.id === "addSubject") {
+      var name = document.getElementById("subjectName").value.trim();
+      if (!name) return;
+      state.subjects.push({ id: uid(), name: name, topics: [] });
+      persist(); render();
+    } else if (e.target.id === "addTopic") {
+      var title = document.getElementById("topicTitle").value.trim();
+      if (!title) return;
+      var s = subj(view.subjectId); if (!s) return;
+      s.topics.unshift({ id: uid(), title: title, at: stampFor(document.getElementById("topicDate").value), checks: {} });
+      persist(); render();
+      var inp = document.getElementById("topicTitle"); if (inp) inp.focus();
+    }
+  });
+  app.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-open],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel]");
+    if (!el) return;
+    var d = el.dataset;
+    if (d.open) { view.subjectId = d.open; view.confirm = null; location.hash = "subject"; }
+    else if (d.home) { view.subjectId = null; view.confirm = null; location.hash = ""; }
+    else if (d.askdelt) view.confirm = "t:" + d.askdelt;
+    else if (d.askdels) view.confirm = "s:" + d.askdels;
+    else if (d.cancel) view.confirm = null;
+    else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); }
+    else if (d.dels) { state.subjects = state.subjects.filter(function (x) { return x.id !== d.dels; }); view.subjectId = null; view.confirm = null; persist(); }
+    render();
+  });
+  app.addEventListener("change", function (e) {
+    var c = e.target.getAttribute && e.target.getAttribute("data-check");
+    if (!c) return;
+    var p = c.split("|"), s = subj(view.subjectId); if (!s) return;
+    var t = s.topics.filter(function (x) { return x.id === p[0]; })[0]; if (!t) return;
+    if (e.target.checked) t.checks[p[1]] = Date.now(); else delete t.checks[p[1]];
+    persist(); render();
+  });
+  window.addEventListener("hashchange", function () {
+    if (!location.hash && view.subjectId) { view.subjectId = null; render(); }
+  });
+
+  // ---------- boot ----------
+  state = lsRead();
+  render();
+  var timer = setTimeout(function () { if (mode === "loading") { mode = "local"; render(); } }, 10000);
+
+  if (window.claude && window.claude.use) {
+    window.claude.use("db").then(function (db) {
+      if (!db) { if (mode === "loading") { mode = "local"; render(); } return; }
+      docRef = db.doc("app/state");
+      docRef.onSnapshot(function (snap) {
+        clearTimeout(timer);
+        if (snap.metadata && snap.metadata.hasPendingWrites) return;
+        var remote = snap.exists && snap.data() && snap.data().json;
+        if (remote) {
+          try { state = normalize(JSON.parse(remote)); lsWrite(); } catch (e) {}
+        } else if (state.subjects.length) {
+          // first cloud run: push what this browser already had
+          docRef.set({ json: JSON.stringify(state) }).catch(function () {});
+        }
+        mode = "cloud"; render();
+      }, function () { clearTimeout(timer); mode = "local"; render(); });
+    }, function () { if (mode === "loading") { mode = "local"; render(); } });
+  } else { mode = "local"; render(); }
+})();
+</script>
+</body>
+</html>
