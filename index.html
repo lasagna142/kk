@@ -8,24 +8,53 @@
 <style>
 /* Layout: one column. Subjects stack top to bottom; each card lists what is overdue (red) or nearly due (yellow). */
 :root {
-  --bg: #0f1a22; --surface: #17252f; --ink: #e8eef2; --muted: #93a4b1; --line: #2a3b47;
-  --accent: #3fc1b3; --accent-ink: #06231f; --accent-soft: #14383a;
-  --late: #ff9b8f; --late-soft: #44201c; --soon: #f6d268; --soon-soft: #3d3210;
-  --done: #5fd18a; --danger: #ff8a7a;
+  --bg: #09090b; --surface: #131316; --ink: #f4f4f5; --muted: #a1a1aa; --line: #27272c;
+  --accent: #f4f4f5; --accent-ink: #09090b; --accent-soft: #1c1c21;
+  --late: #ff6b6b; --late-soft: #3a1416; --soon: #fbbf24; --soon-soft: #33260a;
+  --done: #4ade80; --danger: #ff6b6b;
   --font: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body {
-  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
-  padding-block: 20px 56px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+.shell { display: grid; grid-template-columns: 58fr 42fr; gap: 0; height: 100vh; height: 100dvh; }
+.calpane { padding: 20px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); }
+.wrap { padding: 20px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 16px; align-content: start; }
+.wrap > * { flex: none; }
+.wrap > header h1, header h1 { flex: 1 1 auto; }
+@media (max-width: 900px) {
+  .shell { display: block; height: auto; }
+  .calpane { border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; }
+  .wrap { overflow: visible; padding-bottom: 56px; }
 }
-.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.calhead { display: flex; align-items: center; gap: 8px; }
+.calhead .ttl { flex: 1; font-size: 1.375rem; font-weight: 800; margin: 0; }
+.calbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; min-width: 40px; padding: 4px 12px; font-weight: 600; }
+.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; flex: 1; grid-auto-rows: minmax(84px, 1fr); }
+.calwd { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; color: var(--muted); font-size: .8125rem; font-weight: 600; text-align: center; }
+.cday { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 4px; align-items: stretch; text-align: left; overflow: hidden; min-width: 0; }
+.cday.blank { background: transparent; border-color: transparent; cursor: default; }
+.cday:not(.blank):hover { border-color: var(--muted); }
+.cday .dn { font-size: .8125rem; font-weight: 600; color: var(--muted); }
+.cday.today { border-color: var(--ink); }
+.cday.today .dn { color: var(--ink); font-weight: 800; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .75rem; font-weight: 700; border-radius: 6px; padding: 0 6px; background: #2a2a31; color: var(--ink); line-height: 1.5; }
+.chip.late { background: var(--late-soft); color: var(--late); }
+.chip.soon { background: var(--soon-soft); color: var(--soon); }
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: .8125rem; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 6px; padding: 0 7px; white-space: nowrap; }
+.dlg { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dlgbox { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; width: min(520px, 100%); max-height: 85vh; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+.dlgbox h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.dsub { display: flex; flex-direction: column; gap: 6px; }
+.dsub .dsh { background: none; border: 0; padding: 0; text-align: left; font-weight: 700; font-size: 1.0625rem; display: flex; gap: 8px; align-items: center; }
+.dtop { display: flex; justify-content: space-between; gap: 8px; border-radius: 8px; padding: 6px 10px; background: var(--bg); border: 1px solid var(--line); font-weight: 500; }
+.dtop.late { background: var(--late-soft); color: var(--late); border-color: transparent; }
+.dtop.soon { background: var(--soon-soft); color: var(--soon); border-color: transparent; }
+.dtop .rd { font-size: .8125rem; opacity: .85; white-space: nowrap; }
 header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-h1 { font-size: 1.5rem; margin: 0; font-weight: 700; text-wrap: balance; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+h1 { font-size: 1.75rem; margin: 0; font-weight: 800; text-wrap: balance; min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .status { font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -45,14 +74,16 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .hrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .scard { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.scard .name { font-weight: 700; font-size: 1.1875rem; overflow-wrap: anywhere; }
+.scard .name { font-weight: 800; font-size: 1.3125rem; overflow-wrap: anywhere; display: flex; gap: 10px; align-items: center; }
 .scard .meta { color: var(--muted); font-size: .875rem; }
 .rems { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.rem { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; border-radius: 10px; padding: 8px 10px; }
+.rem { display: flex; gap: 4px 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; border-radius: 10px; padding: 8px 10px; font-size: .9375rem; }
+.rem .due { font-size: .8125rem; opacity: .9; }
+.cd { font-variant-numeric: tabular-nums; font-weight: 700; margin-left: 6px; }
 .rem.late { background: var(--late-soft); color: var(--late); }
 .rem.soon { background: var(--soon-soft); color: var(--soon); }
 .rem .tag { font-weight: 700; font-size: .8125rem; white-space: nowrap; }
-.rem .what { color: inherit; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.rem .what { color: inherit; font-weight: 500; overflow-wrap: anywhere; min-width: 0; }
 .rem .round { font-size: .875rem; }
 .ok { color: var(--done); font-weight: 600; font-size: .9375rem; }
 .more { color: var(--muted); font-size: .875rem; }
@@ -63,7 +94,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .tab.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .topic { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .topic-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
-.topic-title { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.topic-title { font-weight: 600; font-size: 1.0625rem; overflow-wrap: anywhere; min-width: 0; }
 .topic-date { color: var(--muted); font-size: .8125rem; }
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .step { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); cursor: pointer; }
@@ -71,7 +102,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .step.soon { border-color: var(--soon); background: var(--soon-soft); }
 .step.done { border-color: var(--done); }
 .step input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
-.step .lbl { font-weight: 600; font-size: .9375rem; }
+.step .lbl { font-weight: 700; font-size: .9375rem; }
 .step .when { font-size: .75rem; color: var(--muted); }
 .step.late .when { color: var(--late); font-weight: 600; }
 .step.soon .when { color: var(--soon); font-weight: 600; }
@@ -88,7 +119,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .viewer { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.88); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
 .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .sec { display: flex; flex-direction: column; gap: 10px; }
-.sec h2 { font-size: 1.0625rem; margin: 0; font-weight: 700; }
+.sec h2 { font-size: 1.125rem; margin: 0; font-weight: 800; }
 .sec .hint { color: var(--muted); font-size: .875rem; }
 .files { display: flex; flex-direction: column; gap: 6px; }
 .frow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
@@ -99,11 +130,20 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .facts { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
 .tgroup { font-weight: 600; margin-top: 6px; overflow-wrap: anywhere; }
 select { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; flex: 1 1 200px; min-width: 0; color: var(--ink); font: inherit; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 2px; }
+.gthumb { padding: 0; border: 0; background: var(--surface); aspect-ratio: 1; display: block; cursor: pointer; overflow: hidden; }
+.gthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vbtn { position: fixed; background: rgba(0,0,0,.65); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 10px 16px; font-weight: 600; min-height: 44px; min-width: 44px; z-index: 60; }
+.vbtn.nav { top: 50%; transform: translateY(-50%); font-size: 1.25rem; }
+.vtop { top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
+.vcount { position: fixed; top: max(20px, env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); color: #fff; z-index: 60; font-size: .875rem; }
+.vbottom { position: fixed; bottom: max(14px, env(safe-area-inset-bottom, 0px)); left: 0; right: 0; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; z-index: 60; padding: 0 16px; }
+.vbottom .vbtn { position: static; }
 @media (max-width: 460px) { .steps { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
-<div class="wrap" id="app"></div>
+<div class="shell"><aside class="calpane" id="cal" aria-label="ปฏิทิน"></aside><main class="wrap" id="app"></main></div>
 
 <script>
 (function () {
@@ -117,9 +157,17 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   var MAX_REMS = 6;               // reminders shown per subject card before "+N more"
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
-  var view = { subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null, libTopic: "" };
+  var view = { subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null, gconfirm: false, libTopic: "" };
   var app = document.getElementById("app");
 
+  var COLL = (typeof Intl !== "undefined" && Intl.Collator) ? new Intl.Collator(["th", "en"], { numeric: true, sensitivity: "base" }) : { compare: function (a, b) { return a < b ? -1 : a > b ? 1 : 0; } };
+  function byName(a, b) { return COLL.compare(a.name, b.name); }
+  function sortedSubjects() { return state.subjects.slice().sort(byName); }
+  function codeOf(id) { var l = sortedSubjects(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return String(i + 1).padStart(3, "0"); return ""; }
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function clock(ms) { var t = Math.max(0, Math.floor(ms / 1000)); return pad2(Math.floor(t / 3600)) + ":" + pad2(Math.floor(t % 3600 / 60)) + ":" + pad2(t % 60); }
+  function dkey(ts) { var d = new Date(ts); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+  var cal = { y: new Date().getFullYear(), m: new Date().getMonth(), day: null };
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
   function fmt(ts) { return new Date(ts).toLocaleDateString("th-TH", { day: "numeric", month: "short" }); }
@@ -184,17 +232,32 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   function reminders(subject) {
     var now = Date.now(), out = [];
     subject.topics.forEach(function (t) {
-      var late = false, soon = false, first = Infinity;
+      var late = null, soon = null;
       INTERVALS.forEach(function (iv) {
         if (t.checks[iv.key]) return;
         var due = t.at + iv.ms, diff = due - now;
-        if (diff <= 0) { late = true; first = Math.min(first, due); }
-        else if (diff <= SOON_MS) { soon = true; first = Math.min(first, due); }
+        if (diff <= 0) { if (!late || due < late.due) late = { due: due, label: iv.label }; }
+        else if (diff <= SOON_MS) { if (!soon || due < soon.due) soon = { due: due, label: iv.label }; }
       });
-      if (late || soon) out.push({ t: t, late: late, due: first });
+      var pick = late || soon;
+      if (pick) out.push({ t: t, late: !!late, due: pick.due, label: pick.label });
     });
     out.sort(function (a, b) { return (a.late === b.late ? 0 : a.late ? -1 : 1) || a.due - b.due; });
     return out;
+  }
+  // every unchecked review round, grouped by the local day it falls due
+  function dueByDay() {
+    var now = Date.now(), map = {};
+    state.subjects.forEach(function (s) {
+      s.topics.forEach(function (t) {
+        INTERVALS.forEach(function (iv) {
+          if (t.checks[iv.key]) return;
+          var due = t.at + iv.ms, diff = due - now, k = dkey(due);
+          (map[k] = map[k] || []).push({ s: s, t: t, label: iv.label, due: due, st: diff <= 0 ? "late" : diff <= SOON_MS ? "soon" : "" });
+        });
+      });
+    });
+    return map;
   }
   function subj(id) { return state.subjects.filter(function (s) { return s.id === id; })[0]; }
   function countTopics(st) { return st.subjects.reduce(function (n, s) { return n + s.topics.length; }, 0); }
@@ -277,18 +340,53 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     revokeLib();
     var s = view.subjectId ? subj(view.subjectId) : null;
     if (view.subjectId && !s) view.subjectId = null;
-    app.innerHTML = !s ? renderHome() : view.tab === "lib" ? renderLibShell(s) : renderTopics(s);
+    app.innerHTML = !s ? renderHome() : view.tab === "lib" ? renderLibShell(s) : view.tab === "imgs" ? renderImgsShell(s) : renderTopics(s);
+    renderCal();
     if (s && view.tab === "lib") loadLibrary(s);
+    if (s && view.tab === "imgs") loadImages(s);
   }
 
+  function remLine(r) {
+    return '<li class="rem ' + (r.late ? "late" : "soon") + '"><span class="what">' + esc(r.t.title) + '</span>' +
+      '<span class="due">ทบทวน ' + r.label + ' · ถึงวันที่ ' + fmt(r.due) + (r.late ? '' : '<span class="cd" data-cd="' + (r.due) + '">' + clock(r.due - Date.now()) + '</span>') + '</span></li>';
+  }
+  function renderCal() {
+    var el = document.getElementById("cal"); if (!el) return;
+    var map = dueByDay(), codes = {};
+    sortedSubjects().forEach(function (s, i) { codes[s.id] = String(i + 1).padStart(3, "0"); });
+    var first = new Date(cal.y, cal.m, 1), days = new Date(cal.y, cal.m + 1, 0).getDate(), lead = (first.getDay() + 6) % 7;
+    var tk = dkey(Date.now()), cells = "";
+    for (var i = 0; i < lead; i++) cells += '<div class="cday blank"></div>';
+    for (var d = 1; d <= days; d++) {
+      var k = cal.y + "-" + (cal.m + 1) + "-" + d, items = map[k] || [], by = {};
+      items.forEach(function (x) { var b = by[x.s.id] || (by[x.s.id] = { st: "" }); if (x.st === "late" || (x.st === "soon" && b.st !== "late")) b.st = x.st; });
+      var chips = Object.keys(by).sort(function (a, b) { return codes[a] < codes[b] ? -1 : 1; }).map(function (id) { return '<span class="chip ' + by[id].st + '">' + codes[id] + '</span>'; }).join("");
+      cells += '<button class="cday' + (k === tk ? " today" : "") + '" data-day="' + k + '"><span class="dn">' + d + '</span><span class="chips">' + chips + '</span></button>';
+    }
+    var wd = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."].map(function (x) { return "<div>" + x + "</div>"; }).join("");
+    el.innerHTML = '<div class="calhead"><h2 class="ttl">' + first.toLocaleDateString("th-TH", { month: "long", year: "numeric" }) + '</h2>' +
+      '<button class="calbtn" data-calnav="today">วันนี้</button><button class="calbtn" data-calnav="-1" aria-label="เดือนก่อน">‹</button><button class="calbtn" data-calnav="1" aria-label="เดือนถัดไป">›</button></div>' +
+      '<div class="calwd">' + wd + '</div><div class="calgrid">' + cells + '</div>';
+  }
+  function showDay(k) {
+    var old = document.getElementById("daydlg"); if (old) old.remove();
+    cal.day = k; if (!k) return;
+    var p = k.split("-"), date = new Date(+p[0], +p[1] - 1, +p[2]);
+    var items = dueByDay()[k] || [], by = {};
+    items.forEach(function (x) { (by[x.s.id] = by[x.s.id] || { s: x.s, list: [] }).list.push(x); });
+    var body = Object.keys(by).map(function (id) { return by[id]; }).sort(function (a, b) { return codeOf(a.s.id) < codeOf(b.s.id) ? -1 : 1; }).map(function (g) {
+      return '<div class="dsub"><button class="dsh" data-gosub="' + esc(g.s.id) + '"><span class="code">' + codeOf(g.s.id) + '</span><span>' + esc(g.s.name) + '</span></button>' +
+        g.list.sort(function (a, b) { return a.due - b.due; }).map(function (x) { return '<div class="dtop ' + x.st + '"><span>' + esc(x.t.title) + '</span><span class="rd">ทบทวน ' + x.label + '</span></div>'; }).join("") + '</div>';
+    }).join("");
+    document.body.insertAdjacentHTML("beforeend", '<div class="dlg" id="daydlg" data-dayclose="bg"><div class="dlgbox" role="dialog" aria-modal="true"><div class="calhead"><h2 class="ttl">' +
+      date.toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + '</h2><button class="calbtn" data-dayclose="x" aria-label="ปิด">✕</button></div>' +
+      (body || '<div class="empty">ไม่มีหัวข้อที่ต้องทบทวนในวันนี้</div>') + '</div></div>');
+  }
   function renderHome() {
-    var cards = state.subjects.map(function (s) {
+    var cards = sortedSubjects().map(function (s, i) {
       var rems = reminders(s);
-      var items = rems.slice(0, MAX_REMS).map(function (r) {
-        return '<li class="rem ' + (r.late ? "late" : "soon") + '"><span class="tag">' + (r.late ? "เลยกำหนด" : "ใกล้ถึงเวลา") + '</span>' +
-          '<span class="what">' + esc(r.t.title) + '</span></li>';
-      }).join("");
-      return '<div class="scard" role="button" tabindex="0" data-topics="' + esc(s.id) + '"><div><div class="name">' + esc(s.name) + '</div><div class="meta">' + s.topics.length + ' หัวข้อ</div></div>' +
+      var items = rems.slice(0, MAX_REMS).map(remLine).join("");
+      return '<div class="scard" role="button" tabindex="0" data-topics="' + esc(s.id) + '"><div class="name"><span class="code">' + String(i + 1).padStart(3, "0") + '</span><span>' + esc(s.name) + '</span></div>' +
         (rems.length ? '<ul class="rems">' + items + '</ul>' + (rems.length > MAX_REMS ? '<div class="more">และอีก ' + (rems.length - MAX_REMS) + ' หัวข้อ</div>' : "")
                      : '<div class="ok">✓ ไม่มีค้างทบทวน</div>') + '</div>';
     }).join("");
@@ -318,14 +416,15 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     var c = view.confirm === "s:" + s.id;
     return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span>' +
       '<button class="linkdanger" data-askdels="' + esc(s.id) + '">ลบวิชา</button></header>' +
-      '<h1>' + esc(s.name) + '</h1>' +
+      '<h1><span class="code" style="vertical-align:middle;margin-right:8px">' + codeOf(s.id) + '</span>' + esc(s.name) + '</h1>' +
       (c ? '<div class="note warn">จะลบวิชานี้ พร้อมหัวข้อและไฟล์ทั้งหมด ลบแล้วกู้คืนไม่ได้ (ถ้าเคยสำรองข้อมูลไว้ นำเข้าคืนได้) พิมพ์คำว่า <b>ยืนยัน</b> เพื่อลบ</div>' +
            '<div class="addrow"><input type="text" id="delConfirm" placeholder="พิมพ์ ยืนยัน" autocomplete="off" aria-label="พิมพ์ยืนยันเพื่อลบวิชา">' +
            '<button class="btn danger" id="delGo" data-dels="' + esc(s.id) + '" disabled>ลบวิชานี้</button>' +
            '<button class="btn ghost" data-cancel="1">ไม่ลบ</button></div>' : '') +
       (view.msg && view.tab === "topics" ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : '') +
-      '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">หัวข้อทบทวน</button>' +
-      '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังไฟล์</button></div>';
+      '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">หัวข้อ</button>' +
+      '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังไฟล์</button>' +
+      '<button class="tab' + (view.tab === "imgs" ? " on" : "") + '" data-imgs="' + esc(s.id) + '">รูปภาพ</button></div>';
   }
 
   function renderTopics(s) {
@@ -335,7 +434,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var steps = INTERVALS.map(function (iv) {
         var due = t.at + iv.ms, diff = due - now, done = !!t.checks[iv.key];
         var cls = done ? "done" : diff <= 0 ? "late" : diff <= SOON_MS ? "soon" : "";
-        var when = done ? "ทบทวนแล้ว" : diff <= 0 ? "เลยกำหนด" : diff <= SOON_MS ? "ใกล้ถึงเวลา" : "ครบ " + fmt(due);
+        var when = done ? "ทบทวนแล้ว" : "ถึงวันที่ " + fmt(due) + (cls === "soon" ? '<br><span class="cd" style="margin:0" data-cd="' + due + '">' + clock(diff) + '</span>' : "");
         return '<label class="step ' + cls + '"><input type="checkbox" data-check="' + esc(t.id) + '|' + iv.key + '"' + (done ? " checked" : "") + '>' +
           '<span class="lbl">' + iv.label + '</span><span class="when">' + when + '</span></label>';
       }).join("");
@@ -351,6 +450,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนที่ 24 ชม. / 3 / 7 / 21 วัน</div>');
   }
 
+  function isImage(r) { return /^image\//.test(r.type || ""); }
   function fmtSize(n) { return n < 1024 ? n + " B" : n < 1048576 ? Math.round(n / 1024) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
   function extOf(name) { var m = /\.([A-Za-z0-9]{1,5})$/.exec(name); return m ? m[1].toUpperCase() : "ไฟล์"; }
   var libCache = {};
@@ -369,13 +469,12 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       (topics.length
         ? '<div class="addrow"><select id="libTopic" aria-label="หัวข้อ">' + opts + '</select><button class="btn small" data-uptopic="1">+ เพิ่มไฟล์เข้าหัวข้อ</button></div>' +
           '<input type="file" id="libFileTopic" multiple hidden>'
-        : '<div class="note warn">ยังไม่มีหัวข้อในวิชานี้ ไปเพิ่มหัวข้อที่แท็บ “หัวข้อทบทวน” ก่อน</div>') +
+        : '<div class="note warn">ยังไม่มีหัวข้อในวิชานี้ ไปเพิ่มหัวข้อที่แท็บ “หัวข้อ” ก่อน</div>') +
       '<div class="files" id="libTop"></div></section>' +
       (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "");
   }
   function fileRow(r) {
-    var isImg = /^image\//.test(r.type || "");
-    var icon = isImg && r.url ? '<button class="ficon" data-openf="' + esc(r.id) + '" aria-label="เปิดรูป"><img src="' + r.url + '" alt=""></button>' : '<div class="ficon">' + esc(extOf(r.name)) + '</div>';
+    var icon = '<div class="ficon">' + esc(extOf(r.name)) + '</div>';
     var c = view.confirm === "i:" + r.id;
     return '<div class="frow">' + icon + '<div><div class="fname">' + esc(r.name) + '</div><div class="fmeta">' + fmtSize(r.blob.size) + ' · ' + fmt(r.at) + '</div></div>' +
       '<div class="facts"><button class="btn ghost small" data-openf="' + esc(r.id) + '">เปิด</button><button class="btn ghost small" data-dl="' + esc(r.id) + '">ดาวน์โหลด</button>' +
@@ -389,9 +488,10 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       if (view.subjectId !== sid || view.tab !== "lib") return;
       var gen = document.getElementById("libGen"), top = document.getElementById("libTop"); if (!gen || !top) return;
       revokeLib(); libCache = {};
-      list.sort(function (a, b) { return a.at - b.at; });
+      list = list.filter(function (r) { return !isImage(r); });
+      list.sort(byName);
       var topicIds = {}; s.topics.forEach(function (t) { topicIds[t.id] = t; });
-      list.forEach(function (r) { libCache[r.id] = r; if (/^image\//.test(r.type || "")) { r.url = URL.createObjectURL(r.blob); libUrls.push(r.url); } });
+      list.forEach(function (r) { libCache[r.id] = r; });
       var general = list.filter(function (r) { return !r.topicId || !topicIds[r.topicId]; });
       gen.innerHTML = general.length ? general.map(fileRow).join("") : '<div class="empty">ยังไม่มีไฟล์ในคลังเก็บของ</div>';
       var topics = s.topics.slice().sort(function (a, b) { return a.at - b.at; }), html = "";
@@ -400,23 +500,22 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
         if (fs.length) html += '<div class="tgroup">' + esc(t.title) + ' (' + fs.length + ')</div>' + fs.map(fileRow).join("");
       });
       top.innerHTML = html || (s.topics.length ? '<div class="empty">ยังไม่มีไฟล์ในหัวข้อใดเลย</div>' : "");
-      var open = view.viewer && libCache[view.viewer];
-      if (open && open.url) app.insertAdjacentHTML("beforeend", '<div class="viewer" data-closeviewer="1"><img src="' + open.url + '" alt="' + esc(open.name) + '"></div>');
     }).catch(function () {
       var gen = document.getElementById("libGen"); if (gen) gen.innerHTML = '<div class="note warn">อ่านคลังไฟล์ไม่ได้</div>';
     });
   }
   function addFiles(files, sid, topicId) {
-    var list = Array.prototype.slice.call(files);
-    if (!list.length) return;
+    var all = Array.prototype.slice.call(files);
+    var list = all.filter(function (f) { return !/^image\//.test(f.type || ""); });
+    if (!list.length) { view.msg = { text: "ไฟล์รูปภาพให้เพิ่มที่แท็บ “รูปภาพ”", warn: true }; render(); return; }
+    var skipped = all.length - list.length;
     view.msg = { text: "กำลังเพิ่ม " + list.length + " ไฟล์…", warn: false }; render();
     list.reduce(function (chain, f) {
       return chain.then(function () { return imgPut({ id: uid(), subjectId: sid, topicId: topicId || null, name: f.name.slice(0, 160), type: f.type || "", blob: f, at: Date.now() }); });
-    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "เพิ่มไฟล์ไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
+    }, Promise.resolve()).then(function () { view.msg = skipped ? { text: "ข้ามไฟล์รูป " + skipped + " ไฟล์ (รูปภาพให้เพิ่มที่แท็บ “รูปภาพ”)", warn: true } : null; }, function () { view.msg = { text: "เพิ่มไฟล์ไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
   }
   function openFile(id) {
     var r = libCache[id]; if (!r) return;
-    if (/^image\//.test(r.type || "")) { view.viewer = id; render(); return; }
     var u = URL.createObjectURL(r.blob);
     window.open(u, "_blank");
     setTimeout(function () { URL.revokeObjectURL(u); }, 60000);
@@ -430,6 +529,56 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   function delTopicFiles(sid, tid) {
     if (!idb) return Promise.resolve();
     return imgList(sid).then(function (l) { return Promise.all(l.filter(function (r) { return r.topicId === tid; }).map(function (r) { return imgDel(r.id); })); }).catch(function () {});
+  }
+
+  // ---------- gallery (รูปภาพ tab) ----------
+  var gOrder = [];
+  function renderImgsShell(s) {
+    if (!idb) return subjectHead(s) + '<div class="note warn">เบราว์เซอร์นี้เก็บรูปไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>';
+    return subjectHead(s) +
+      '<div class="row"><label class="btn small filebtn" for="imgFile">+ เพิ่มรูป</label><input type="file" id="imgFile" accept="image/*" multiple hidden></div>' +
+      '<div id="imgGrid"><div class="empty">กำลังโหลด…</div></div>' +
+      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "");
+  }
+  function loadImages(s) {
+    if (!idb) return;
+    var sid = s.id;
+    imgList(sid).then(function (list) {
+      if (view.subjectId !== sid || view.tab !== "imgs") return;
+      var grid = document.getElementById("imgGrid"); if (!grid) return;
+      revokeLib(); libCache = {};
+      var imgs = list.filter(isImage).sort(function (a, b) { return b.at - a.at; });
+      gOrder = imgs.map(function (r) { return r.id; });
+      imgs.forEach(function (r) { r.url = URL.createObjectURL(r.blob); libUrls.push(r.url); libCache[r.id] = r; });
+      grid.innerHTML = imgs.length
+        ? '<div class="grid2">' + imgs.map(function (r) { return '<button class="gthumb" data-gview="' + esc(r.id) + '" aria-label="เปิดรูป"><img src="' + r.url + '" alt=""></button>'; }).join("") + '</div>'
+        : '<div class="empty">ยังไม่มีรูปภาพในวิชานี้<br>กด “เพิ่มรูป” เพื่อเลือกรูปจากเครื่อง</div>';
+      if (view.viewer && libCache[view.viewer]) showViewer(); else view.viewer = null;
+    }).catch(function () {
+      var grid = document.getElementById("imgGrid"); if (grid) grid.innerHTML = '<div class="note warn">อ่านรูปภาพไม่ได้</div>';
+    });
+  }
+  function showViewer() {
+    var old = document.getElementById("gviewer"); if (old) old.remove();
+    var r = libCache[view.viewer]; if (!r) return;
+    var i = gOrder.indexOf(r.id), n = gOrder.length;
+    app.insertAdjacentHTML("beforeend",
+      '<div class="viewer" id="gviewer" data-closeviewer="1"><img src="' + r.url + '" alt="">' +
+      '<span class="vcount">' + (i + 1) + ' / ' + n + '</span>' +
+      '<button class="vbtn vtop" data-closeviewer="1" aria-label="ปิด">✕</button>' +
+      (i > 0 ? '<button class="vbtn nav" style="left:max(8px, env(safe-area-inset-left, 0px))" data-gprev="1" aria-label="รูปก่อนหน้า">‹</button>' : "") +
+      (i < n - 1 ? '<button class="vbtn nav" style="right:max(8px, env(safe-area-inset-right, 0px))" data-gnext="1" aria-label="รูปถัดไป">›</button>' : "") +
+      '<div class="vbottom">' + (view.gconfirm
+        ? '<button class="vbtn" data-gdel="1" style="color:#ff8a7a">ลบรูปนี้เลย</button><button class="vbtn" data-gdelno="1">ไม่ลบ</button>'
+        : '<button class="vbtn" data-dl="' + esc(r.id) + '">ดาวน์โหลด</button><button class="vbtn" data-gdelask="1" style="color:#ff8a7a">ลบ</button>') + '</div></div>');
+  }
+  function addImages(files, sid) {
+    var list = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
+    if (!list.length) { view.msg = { text: "เลือกได้เฉพาะไฟล์รูปภาพ", warn: true }; render(); return; }
+    view.msg = { text: "กำลังเพิ่ม " + list.length + " รูป…", warn: false }; render();
+    list.reduce(function (chain, f) {
+      return chain.then(function () { return shrink(f).then(function (b) { return imgPut({ id: uid(), subjectId: sid, topicId: null, name: f.name.slice(0, 160), type: b.type || f.type, blob: b, at: Date.now() }); }); });
+    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "เพิ่มรูปไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
   }
 
   // ---------- events ----------
@@ -449,7 +598,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var inp = document.getElementById("topicTitle"); if (inp) inp.focus();
     }
   });
-  var SEL = "[data-topics],[data-lib],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic]";
+  var SEL = "[data-topics],[data-lib],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic],[data-imgs],[data-gview],[data-gprev],[data-gnext],[data-gdelask],[data-gdelno],[data-gdel]";
   app.addEventListener("click", function (e) {
     var el = e.target.closest(SEL);
     if (!el) return;
@@ -472,7 +621,17 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       if (!sel || !sel.value) { view.msg = { text: "เลือกหัวข้อก่อนอัปโหลดไฟล์ในส่วนไฟล์ตามหัวข้อ", warn: true }; }
       else { var fi = document.getElementById("libFileTopic"); if (fi) fi.click(); return; }
     }
-    else if (d.closeviewer) view.viewer = null;
+    else if (d.imgs) { view.subjectId = d.imgs; view.tab = "imgs"; view.confirm = null; view.viewer = null; view.gconfirm = false; }
+    else if (d.gview) { view.viewer = d.gview; view.gconfirm = false; showViewer(); return; }
+    else if (d.gprev || d.gnext) { var gi = gOrder.indexOf(view.viewer) + (d.gnext ? 1 : -1); if (gOrder[gi]) { view.viewer = gOrder[gi]; view.gconfirm = false; showViewer(); } return; }
+    else if (d.gdelask) { view.gconfirm = true; showViewer(); return; }
+    else if (d.gdelno) { view.gconfirm = false; showViewer(); return; }
+    else if (d.gdel) {
+      var gid = view.viewer, gj = gOrder.indexOf(gid);
+      view.viewer = gOrder[gj + 1] || gOrder[gj - 1] || null; if (view.viewer === gid) view.viewer = null; view.gconfirm = false;
+      imgDel(gid).catch(function () {}).then(render); return;
+    }
+    else if (d.closeviewer) { view.viewer = null; view.gconfirm = false; var gv = document.getElementById("gviewer"); if (gv) gv.remove(); return; }
     else if (d.delimg) { view.confirm = null; imgDel(d.delimg).catch(function () {}).then(render); return; }
     else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); delTopicFiles(s.id, d.delt); }
     else if (d.dels) {
@@ -488,6 +647,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   app.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "importFile") { if (t.files && t.files[0]) readImport(t.files[0]); return; }
+    if (t.id === "imgFile") { if (t.files && t.files.length && view.subjectId) addImages(t.files, view.subjectId); return; }
     if (t.id === "libTopic") { view.libTopic = t.value; return; }
     if (t.id === "libFileGen") { if (t.files && t.files.length && view.subjectId) addFiles(t.files, view.subjectId, null); return; }
     if (t.id === "libFileTopic") { if (t.files && t.files.length && view.subjectId && view.libTopic) addFiles(t.files, view.subjectId, view.libTopic); return; }
@@ -504,7 +664,32 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   app.addEventListener("keydown", function (e) {
     if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("scard")) { e.preventDefault(); e.target.click(); }
   });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && view.viewer) { view.viewer = null; render(); } });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.getElementById("daydlg")) { showDay(null); return; }
+    if (!view.viewer) return;
+    if (e.key === "Escape") { view.viewer = null; view.gconfirm = false; var gv = document.getElementById("gviewer"); if (gv) gv.remove(); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      var gi = gOrder.indexOf(view.viewer) + (e.key === "ArrowRight" ? 1 : -1);
+      if (gOrder[gi]) { view.viewer = gOrder[gi]; view.gconfirm = false; showViewer(); }
+    }
+  });
+
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-calnav],[data-day],[data-dayclose],[data-gosub]"); if (!el) return;
+    var d = el.dataset;
+    if (d.calnav) {
+      if (d.calnav === "today") { var n = new Date(); cal.y = n.getFullYear(); cal.m = n.getMonth(); }
+      else { var m = cal.m + (+d.calnav); cal.y += Math.floor(m / 12); cal.m = (m % 12 + 12) % 12; }
+      renderCal();
+    } else if (d.day) showDay(d.day);
+    else if (d.dayclose) { if (d.dayclose === "bg" && e.target !== el) return; showDay(null); }
+    else if (d.gosub) { showDay(null); view.subjectId = d.gosub; view.tab = "topics"; view.confirm = null; view.viewer = null; view.msg = null; render(); }
+  });
+  setInterval(function () {
+    var nodes = document.querySelectorAll("[data-cd]"), expired = false, now = Date.now();
+    nodes.forEach(function (n) { var ms = +n.getAttribute("data-cd") - now; if (ms <= 0) expired = true; else n.textContent = clock(ms); });
+    if (expired && !document.getElementById("daydlg") && !view.viewer) { var a = document.activeElement; if (!(a && a.tagName === "INPUT" && a.type === "text")) render(); }
+  }, 1000);
 
   // ---------- boot ----------
   state = lsRead();
