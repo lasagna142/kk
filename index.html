@@ -18,9 +18,14 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
-.shell { display: grid; grid-template-columns: 38fr 62fr; gap: 0; height: 100vh; height: 100dvh; }
-.calpane { padding: 16px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); }
-.wrap { padding: 20px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 16px; align-content: start; }
+.shell { display: block; }
+.calpane { position: fixed; z-index: 44; left: 0; top: 0; bottom: 0; width: min(460px, 92vw); background: var(--bg); border-right: 1px solid var(--line); padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; transform: translateX(-100%); transition: transform .25s ease; visibility: hidden; }
+body.calopen .calpane { transform: none; visibility: visible; }
+#calBack { position: fixed; inset: 0; z-index: 43; background: rgba(0,0,0,.6); display: none; }
+body.calopen #calBack { display: block; }
+#calToggle { position: fixed; z-index: 45; left: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 64px; border: 1px solid var(--line); border-left: 0; border-radius: 0 12px 12px 0; background: var(--surface); color: var(--ink); font-size: 1.25rem; padding: 0; transition: left .25s ease; }
+body.calopen #calToggle { left: min(460px, 92vw); }
+.wrap { max-width: 760px; margin: 0 auto; padding: 20px 20px 56px 40px; display: flex; flex-direction: column; gap: 16px; }
 .wrap > * { flex: none; }
 .wrap > header h1, header h1 { flex: 1 1 auto; }
 .acc { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px; }
@@ -31,11 +36,6 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .accb { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 10px; }
 .pick { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .pickrow { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
-@media (max-width: 900px) {
-  .shell { display: block; height: auto; }
-  .calpane { border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; }
-  .wrap { overflow: visible; padding-bottom: 56px; }
-}
 .calhead { display: flex; align-items: center; gap: 8px; }
 .calhead .ttl { flex: 1; font-size: 1.1rem; font-weight: 800; margin: 0; }
 .calbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 34px; min-width: 34px; padding: 2px 10px; font-weight: 600; font-size: .875rem; }
@@ -52,7 +52,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .chip.late { background: var(--late-soft); color: var(--late); }
 .chip.soon { background: var(--soon-soft); color: var(--soon); }
 .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: .8125rem; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 6px; padding: 0 7px; white-space: nowrap; }
-.dlg { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dlg { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .dlgbox { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; width: min(520px, 100%); max-height: 85vh; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
 .dlgbox h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
 .dsub { display: flex; flex-direction: column; gap: 6px; }
@@ -151,7 +151,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 </style>
 </head>
 <body>
-<div class="shell"><aside class="calpane" id="cal" aria-label="Calendar"></aside><main class="wrap" id="app"></main></div>
+<div class="shell"><aside class="calpane" id="cal" aria-label="Calendar"></aside><div id="calBack"></div><button id="calToggle" aria-label="Calendar">›</button><main class="wrap" id="app"></main></div>
 
 <script>
 (function () {
@@ -385,6 +385,16 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       '<button class="calbtn" data-calnav="today">Today</button><button class="calbtn" data-calnav="-1" aria-label="Previous month">‹</button><button class="calbtn" data-calnav="1" aria-label="Next month">›</button></div>' +
       '<div class="calwd">' + wd + '</div><div class="calgrid">' + cells + '</div>';
   }
+  function confirmDlg(msg, label, fn) {
+    var old = document.getElementById("cfm"); if (old) old.remove();
+    document.body.insertAdjacentHTML("beforeend", '<div class="dlg" id="cfm"><div class="dlgbox" role="alertdialog" aria-modal="true"><h2 style="font-size:1.0625rem">' + esc(msg) + '</h2>' +
+      '<div class="row" style="justify-content:flex-end"><button class="btn ghost" id="cfmNo">Cancel</button><button class="btn danger" id="cfmYes">' + esc(label) + '</button></div></div></div>');
+    var c = document.getElementById("cfm");
+    document.getElementById("cfmNo").onclick = function () { c.remove(); };
+    document.getElementById("cfmYes").onclick = function () { c.remove(); fn(); };
+    c.addEventListener("click", function (e) { if (e.target === c) c.remove(); });
+    document.getElementById("cfmNo").focus();
+  }
   function showDay(k) {
     var old = document.getElementById("daydlg"); if (old) old.remove();
     cal.day = k; if (!k) return;
@@ -439,9 +449,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   }
   function renderTopics(s) {
     var now = Date.now();
-    var sorted = s.topics.map(function (t) { return { t: t, r: topicRem(t) }; }).sort(function (a, b) {
-      if (a.r && b.r) return remCmp(a.r, b.r); if (a.r) return -1; if (b.r) return 1; return a.t.at - b.t.at;
-    }).map(function (x) { return x.t; });
+    var sorted = s.topics.slice().sort(function (a, b) { return a.at - b.at; });
     var topics = sorted.map(function (t) {
       var steps = INTERVALS.map(function (iv) {
         var due = t.at + iv.ms, diff = due - now, done = !!t.checks[iv.key];
@@ -452,15 +460,15 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       }).join("");
       var c = view.confirm === "t:" + t.id, key = "t:" + t.id;
       return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) + '</div><div class="topic-date">' + fmt(t.at) + '</div></div>' +
-        (c ? '<span class="row"><button class="btn danger small" data-delt="' + esc(t.id) + '">Delete</button><button class="btn ghost small" data-cancel="1">Cancel</button></span>'
-           : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="Delete topic">Delete</button>') +
+        '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="Delete topic">Delete</button>' +
         '</div><div class="steps">' + steps + '</div>' +
-        '<div class="acc"><button class="acch" data-tog="' + key + '"><span>Files<span class="cnt" data-tcnt="' + esc(t.id) + '"></span></span><span class="chev">▾</span></button>' +
+        '<div class="acc"><div class="acch2"><button class="acch" data-tog="' + key + '"><span>Files<span class="cnt" data-tcnt="' + esc(t.id) + '"></span></span><span class="chev">▾</span></button>' +
+        '<label class="btn small filebtn" for="tf-' + esc(t.id) + '">Add</label><input type="file" id="tf-' + esc(t.id) + '" multiple hidden></div>' +
         '<div class="accb" data-body="' + key + '"' + (view.open[key] ? '' : ' hidden') + '><div data-tfiles="' + esc(t.id) + '"></div></div></div></div>';
     }).join("");
     var storage = idb
       ? '<div class="acc"><div class="acch2"><button class="acch" data-tog="storage"><span>Storage<span class="cnt" id="storCnt"></span></span><span class="chev">▾</span></button>' +
-        '<label class="btn small filebtn" for="libFileGen">Upload</label><input type="file" id="libFileGen" multiple hidden></div>' +
+        '<label class="btn small filebtn" for="libFileGen">Add</label><input type="file" id="libFileGen" multiple hidden></div>' +
         '<div class="accb" data-body="storage"' + (view.open.storage ? '' : ' hidden') + '><div id="storList"></div></div></div>'
       : '';
     return subjectHead(s) + storage +
@@ -475,12 +483,10 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   var libCache = {};
 
   function fileRow(r, where) {
-    var c = view.confirm === "i:" + r.id;
     return '<div class="frow"><div class="ficon">' + esc(extOf(r.name)) + '</div><div><div class="fname">' + esc(r.name) + '</div><div class="fmeta">' + fmtSize(r.blob.size) + '</div></div>' +
       '<div class="facts"><button class="btn ghost small" data-openf="' + esc(r.id) + '">Open</button><button class="btn ghost small" data-dl="' + esc(r.id) + '">Download</button>' +
       (where === "topic" ? '<button class="btn ghost small" data-unattach="' + esc(r.id) + '">To Storage</button>' : '') +
-      (c ? '<button class="btn danger small" data-delimg="' + esc(r.id) + '">Delete</button><button class="btn ghost small" data-cancel="1">Cancel</button>'
-         : '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">Delete</button>') + '</div></div>';
+      '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">Delete</button></div></div>';
   }
   function loadFiles(s) {
     if (!idb) return;
@@ -541,7 +547,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   function renderImgsShell(s) {
     if (!idb) return subjectHead(s) + '<div class="note warn">Storage unavailable in this browser</div>';
     return subjectHead(s) +
-      '<div class="row"><label class="btn small filebtn" for="imgFile">Upload</label><input type="file" id="imgFile" accept="image/*" multiple hidden></div>' +
+      '<div class="row"><label class="btn small filebtn" for="imgFile">Add</label><input type="file" id="imgFile" accept="image/*" multiple hidden></div>' +
       '<div id="imgGrid"></div>' +
       "";
   }
@@ -616,13 +622,14 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     else if (d.tog) { view.open[d.tog] = !view.open[d.tog]; var bd = app.querySelector('[data-body="' + d.tog + '"]'); if (bd) bd.hidden = !view.open[d.tog]; return; }
     else if (d.attach || d.unattach) {
       var ap = (d.attach || d.unattach).split("|"), rec = libCache[ap[0]]; if (!rec) return;
-      rec.topicId = d.attach ? ap[1] : null; if (d.attach) view.open["t:" + ap[1]] = true;
-      imgPut(rec).catch(function () {}).then(render); return;
+      var go = function () { rec.topicId = d.attach ? ap[1] : null; if (d.attach) view.open["t:" + ap[1]] = true; imgPut(rec).catch(function () {}).then(render); };
+      if (d.attach) go(); else confirmDlg("Move this file back to Storage?", "Move", go);
+      return;
     }
     else if (d.home) { view.subjectId = null; view.confirm = null; view.viewer = null; }
-    else if (d.askdelt) view.confirm = "t:" + d.askdelt;
+    else if (d.askdelt) { var tid0 = d.askdelt; confirmDlg("Delete this topic and its files?", "Delete", function () { var s0 = subj(view.subjectId); if (!s0) return; s0.topics = s0.topics.filter(function (t) { return t.id !== tid0; }); persist(); delTopicFiles(s0.id, tid0).then(render); }); return; }
     else if (d.askdels) view.confirm = "s:" + d.askdels;
-    else if (d.askdelimg) view.confirm = "i:" + d.askdelimg;
+    else if (d.askdelimg) { var iid0 = d.askdelimg; confirmDlg("Delete this file?", "Delete", function () { imgDel(iid0).catch(function () {}).then(render); }); return; }
     else if (d.cancel) view.confirm = null;
     else if (d.openf) { openFile(d.openf); return; }
     else if (d.dl) { downloadFile(d.dl); return; }
@@ -634,7 +641,13 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     else if (d.imgs) { view.subjectId = d.imgs; view.tab = "imgs"; view.confirm = null; view.viewer = null; view.gconfirm = false; }
     else if (d.gview) { view.viewer = d.gview; view.gconfirm = false; showViewer(); return; }
     else if (d.gprev || d.gnext) { var gi = gOrder.indexOf(view.viewer) + (d.gnext ? 1 : -1); if (gOrder[gi]) { view.viewer = gOrder[gi]; view.gconfirm = false; showViewer(); } return; }
-    else if (d.gdelask) { view.gconfirm = true; showViewer(); return; }
+    else if (d.gdelask) {
+      confirmDlg("Delete this photo?", "Delete", function () {
+        var gid = view.viewer, gj = gOrder.indexOf(gid);
+        view.viewer = gOrder[gj + 1] || gOrder[gj - 1] || null; if (view.viewer === gid) view.viewer = null; view.gconfirm = false;
+        imgDel(gid).catch(function () {}).then(render);
+      }); return;
+    }
     else if (d.gdelno) { view.gconfirm = false; showViewer(); return; }
     else if (d.gdel) {
       var gid = view.viewer, gj = gOrder.indexOf(gid);
@@ -658,6 +671,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     var t = e.target;
     if (t.id === "importFile") { if (t.files && t.files[0]) readImport(t.files[0]); return; }
     if (t.id === "imgFile") { if (t.files && t.files.length && view.subjectId) addImages(t.files, view.subjectId); return; }
+    if (t.id && t.id.indexOf("tf-") === 0) { if (t.files && t.files.length && view.subjectId) { view.open["t:" + t.id.slice(3)] = true; addFiles(t.files, view.subjectId, t.id.slice(3)); } return; }
     if (t.id === "libTopic") { view.libTopic = t.value; return; }
     if (t.id === "libFileGen") { if (t.files && t.files.length && view.subjectId) addFiles(t.files, view.subjectId, null); return; }
     if (t.id === "libFileTopic") { if (t.files && t.files.length && view.subjectId && view.libTopic) addFiles(t.files, view.subjectId, view.libTopic); return; }
@@ -675,6 +689,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("scard")) { e.preventDefault(); e.target.click(); }
   });
   document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.getElementById("cfm")) { document.getElementById("cfm").remove(); return; }
     if (e.key === "Escape" && document.getElementById("daydlg")) { showDay(null); return; }
     if (!view.viewer) return;
     if (e.key === "Escape") { view.viewer = null; view.gconfirm = false; var gv = document.getElementById("gviewer"); if (gv) gv.remove(); }
@@ -695,6 +710,10 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     else if (d.dayclose) { if (d.dayclose === "bg" && e.target !== el) return; showDay(null); }
     else if (d.gosub) { showDay(null); view.subjectId = d.gosub; view.tab = "topics"; view.confirm = null; view.viewer = null; view.msg = null; render(); }
   });
+  document.getElementById("calToggle").addEventListener("click", function () {
+    var o = document.body.classList.toggle("calopen"); this.textContent = o ? "‹" : "›";
+  });
+  document.getElementById("calBack").addEventListener("click", function () { document.body.classList.remove("calopen"); document.getElementById("calToggle").textContent = "›"; });
   setInterval(function () {
     var nodes = document.querySelectorAll("[data-cd]"), expired = false, now = Date.now();
     nodes.forEach(function (n) { var ms = +n.getAttribute("data-cd") - now; if (ms <= 0) expired = true; else n.textContent = clock(ms); });
