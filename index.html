@@ -78,6 +78,15 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .btn.filebtn { display: inline-flex; align-items: center; cursor: pointer; }
 .linkdanger { background: none; border: 0; color: var(--danger); font-weight: 600; padding: 6px 0; }
 .scard { cursor: pointer; }
+.scard.tint-soon:not(.open) .name > span:last-child { color: var(--soon); }
+.scard.tint-late:not(.open) .name > span:last-child { color: var(--late); }
+.scard .calbtn { min-height: 40px; min-width: 44px; font-size: 1.125rem; }
+.scard.open .calbtn { transform: rotate(180deg); }
+.scard.ypv:not(.open) .rem.late { display: none; }
+.skulls { display: flex; gap: 6px; align-items: center; }
+.skull { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.skull i { font-style: normal; font-size: .6875rem; color: var(--muted); margin-top: 1px; }
+.subbar { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 8px 0; margin: -8px 0; }
 .scard:hover { border-color: var(--accent); }
 .hrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
@@ -246,8 +255,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       if (diff <= 0) { if (!late || due < late.due) late = { due: due }; }
       else if (diff <= SOON_MS) { if (!soon || due < soon.due) soon = { due: due }; }
     });
-    var pick = late || soon;
-    return pick ? { t: t, late: !!late, due: pick.due } : null;
+    var pick = soon || late;   // yellow beats red
+    return pick ? { t: t, late: !soon, due: pick.due } : null;
   }
   // yellow first (soonest on top), then red (least overdue first)
   function remCmp(a, b) { if (a.late !== b.late) return a.late ? 1 : -1; return a.late ? b.due - a.due : a.due - b.due; }
@@ -409,11 +418,27 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + '</h2><button class="calbtn" data-dayclose="x" aria-label="Close">✕</button></div>' +
       (body || '<div class="empty">Nothing due</div>') + '</div></div>');
   }
+  var skullN = 0;
+  function overdueRounds(t) { var now = Date.now(); return INTERVALS.filter(function (iv) { return !t.checks[iv.key] && t.at + iv.ms <= now; }).length; }
+  function skull(n) {
+    var id = "sk" + (skullN++), f = n / INTERVALS.length, y = Math.round((1 - f) * 100);
+    return '<span class="skull" title="' + n + '/' + INTERVALS.length + '"><svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="1" x2="0" y2="0">' +
+      '<stop offset="' + (f * 100) + '%" stop-color="#ff6b6b"/><stop offset="' + (f * 100) + '%" stop-color="#3a3a42"/></linearGradient></defs>' +
+      '<path fill="url(#' + id + ')" d="M12 2C7 2 4 5.5 4 10c0 2.6 1.2 4.4 3 5.6V19a1 1 0 001 1h8a1 1 0 001-1v-3.6c1.8-1.2 3-3 3-5.6 0-4.5-3-8-8-8z"/>' +
+      '<circle cx="9" cy="10.5" r="2" fill="#09090b"/><circle cx="15" cy="10.5" r="2" fill="#09090b"/><path d="M11 14.5h2l-1 1.8z" fill="#09090b"/></svg><i>' + n + '/' + INTERVALS.length + '</i></span>';
+  }
   function renderHome() {
     var cards = displaySubjects().map(function (x) {
-      var items = x.rems.slice(0, MAX_REMS).map(remLine).join("");
-      return '<div class="scard" role="button" tabindex="0" data-topics="' + esc(x.s.id) + '"><div class="name"><span class="code">' + x.code + '</span><span>' + esc(x.s.name) + '</span></div>' +
-        (x.rems.length ? '<ul class="rems">' + items + '</ul>' + (x.rems.length > MAX_REMS ? '<div class="more">+' + (x.rems.length - MAX_REMS) + '</div>' : "") : '') + '</div>';
+      var key = "c:" + x.s.id, open = !!view.open[key];
+      var yellow = x.rank && !x.rank.late;
+      var list = x.rems.slice().sort(function (a, b) { return b.t.at - a.t.at; });   // newest topic first
+      var reds = list.filter(function (r) { return r.late; });
+      var tint = x.rank ? (yellow ? "tint-soon" : "tint-late") : "";
+      var skulls = (!yellow && reds.length) ? '<span class="skulls">' + reds.slice(0, 5).map(function (r) { return skull(overdueRounds(r.t)); }).join("") + (reds.length > 5 ? '<b class="more">+' + (reds.length - 5) + '</b>' : '') + '</span>' : '';
+      var canToggle = yellow ? reds.length > 0 : list.length > 0;
+      return '<div class="scard ' + tint + (yellow ? " ypv" : "") + (open ? " open" : "") + '" role="button" tabindex="0" data-cid="' + esc(x.s.id) + '" data-topics="' + esc(x.s.id) + '"><div class="hrow" style="flex-wrap:nowrap"><div class="name" style="flex:1;min-width:0"><span class="code">' + x.code + '</span><span>' + esc(x.s.name) + '</span></div>' + skulls +
+        (canToggle ? '<button class="calbtn" data-tog="' + key + '" aria-label="Toggle topics">▾</button>' : '') + '</div>' +
+        (list.length ? '<ul class="rems' + (yellow ? '' : ' accb') + '"' + (yellow ? '' : ' data-body="' + key + '"' + (open ? '' : ' hidden')) + '>' + list.map(remLine).join("") + '</ul>' : '') + '</div>';
     }).join("");
     return '<header><h1>Subjects</h1><div class="hrow"><button class="btn ghost small" data-export="1">Export</button>' +
       '<label class="btn ghost small filebtn" for="importFile">Import</label>' +
@@ -436,7 +461,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 
   function subjectHead(s) {
     var c = view.confirm === "s:" + s.id;
-    return '<header><button class="back" data-home="1">← Subjects</button><span class="sp"></span>' +
+    return '<header class="subbar"><button class="back" data-home="1">← Subjects</button><span class="sp"></span>' +
       '<button class="linkdanger" data-askdels="' + esc(s.id) + '">Delete subject</button></header>' +
       '<h1><span class="code" style="vertical-align:middle;margin-right:8px">' + codeOf(s.id) + '</span>' + esc(s.name) + '</h1>' +
       (c ? '<div class="note warn">Type <b>confirm</b> to delete this subject and everything in it.</div>' +
@@ -628,15 +653,20 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var go1 = document.getElementById("pkGo");
       if (go1) go1.onclick = function () {
         var ids = Array.prototype.map.call(dg.querySelectorAll("input:checked"), function (i) { return i.value; });
-        if (!ids.length) return; dg.remove(); view.open["t:" + tid1] = true;
+        if (!ids.length) return; dg.remove(); view.open = { ["t:" + tid1]: true };
         Promise.all(ids.map(function (id) { var rec = libCache[id]; if (!rec) return null; rec.topicId = tid1; return imgPut(rec).catch(function () {}); })).then(render);
       };
       return;
     }
-    else if (d.tog) { view.open[d.tog] = !view.open[d.tog]; var bd = app.querySelector('[data-body="' + d.tog + '"]'); if (bd) bd.hidden = !view.open[d.tog]; return; }
+    else if (d.tog) {
+      var was = view.open[d.tog]; view.open = {}; if (!was) view.open[d.tog] = true;   // only one open at a time
+      app.querySelectorAll("[data-body]").forEach(function (b) { b.hidden = !view.open[b.getAttribute("data-body")]; });
+      app.querySelectorAll(".scard[data-cid]").forEach(function (c) { c.classList.toggle("open", !!view.open["c:" + c.getAttribute("data-cid")]); });
+      return;
+    }
     else if (d.attach || d.unattach) {
       var ap = (d.attach || d.unattach).split("|"), rec = libCache[ap[0]]; if (!rec) return;
-      var go = function () { rec.topicId = d.attach ? ap[1] : null; if (d.attach) view.open["t:" + ap[1]] = true; imgPut(rec).catch(function () {}).then(render); };
+      var go = function () { rec.topicId = d.attach ? ap[1] : null; if (d.attach) view.open = { ["t:" + ap[1]]: true }; imgPut(rec).catch(function () {}).then(render); };
       if (d.attach) go(); else confirmDlg("Move this file back to Storage?", "Move", go);
       return;
     }
