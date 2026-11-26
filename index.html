@@ -170,7 +170,10 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     { key: "d7",  label: "7d",  ms: 7 * 24 * 3600e3 },
     { key: "d21", label: "21d", ms: 21 * 24 * 3600e3 }
   ];
-  var SOON_MS = 24 * 3600e3;      // yellow when a review is due within the next 24 hours
+  // Review state is by calendar day: due day = today -> yellow, counting down to midnight; due day already passed -> red.
+  function dayStart(ts) { var d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+  function dayEnd(ts) { var d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime(); }
+  function ivState(due, now) { if (now >= dayEnd(due)) return "late"; if (now >= dayStart(due)) return "soon"; return ""; }
   var MAX_REMS = 6;               // reminders shown per subject card before "+N more"
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
@@ -246,14 +249,14 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   function blobToDataUrl(b) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(b); }); }
 
   // ---------- reminders ----------
-  // One entry per topic: red if any review is overdue, otherwise yellow if one is due within SOON_MS.
+  // One entry per topic: red if any review is overdue, otherwise yellow if one is due today.
   function topicRem(t) {
     var now = Date.now(), late = null, soon = null;
     INTERVALS.forEach(function (iv) {
       if (t.checks[iv.key]) return;
-      var due = t.at + iv.ms, diff = due - now;
-      if (diff <= 0) { if (!late || due < late.due) late = { due: due }; }
-      else if (diff <= SOON_MS) { if (!soon || due < soon.due) soon = { due: due }; }
+      var due = t.at + iv.ms, st = ivState(due, now);
+      if (st === "late") { if (!late || due < late.due) late = { due: due }; }
+      else if (st === "soon") { if (!soon || due < soon.due) soon = { due: due }; }
     });
     var pick = soon || late;   // yellow beats red
     return pick ? { t: t, late: !soon, due: pick.due } : null;
@@ -278,8 +281,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       s.topics.forEach(function (t) {
         INTERVALS.forEach(function (iv) {
           if (t.checks[iv.key]) return;
-          var due = t.at + iv.ms, diff = due - now, k = dkey(due);
-          (map[k] = map[k] || []).push({ s: s, t: t, label: iv.label, due: due, st: diff <= 0 ? "late" : diff <= SOON_MS ? "soon" : "" });
+          var due = t.at + iv.ms, k = dkey(due);
+          (map[k] = map[k] || []).push({ s: s, t: t, label: iv.label, due: due, st: ivState(due, now) });
         });
       });
     });
@@ -374,7 +377,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 
   function remLine(r) {
     return '<li class="rem ' + (r.late ? "late" : "soon") + '"><span class="what">' + esc(r.t.title) + '</span>' +
-      (r.late ? '' : '<span class="cd" data-cd="' + r.due + '">' + clock(r.due - Date.now()) + '</span>') + '</li>';
+      (r.late ? '' : '<span class="cd" data-cd="' + dayEnd(r.due) + '">' + clock(dayEnd(r.due) - Date.now()) + '</span>') + '</li>';
   }
   function renderCal() {
     var el = document.getElementById("cal"); if (!el) return;
@@ -419,7 +422,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       (body || '<div class="empty">Nothing due</div>') + '</div></div>');
   }
   var skullN = 0;
-  function overdueRounds(t) { var now = Date.now(); return INTERVALS.filter(function (iv) { return !t.checks[iv.key] && t.at + iv.ms <= now; }).length; }
+  function overdueRounds(t) { var now = Date.now(); return INTERVALS.filter(function (iv) { return !t.checks[iv.key] && dayEnd(t.at + iv.ms) <= now; }).length; }
   function skull(n) {
     var id = "sk" + (skullN++), f = n / INTERVALS.length, y = Math.round((1 - f) * 100);
     return '<span class="skull"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="1" x2="0" y2="0">' +
@@ -480,9 +483,9 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     var sorted = s.topics.slice().sort(function (a, b) { return a.at - b.at; });
     var topics = sorted.map(function (t) {
       var steps = INTERVALS.map(function (iv) {
-        var due = t.at + iv.ms, diff = due - now, done = !!t.checks[iv.key];
-        var cls = done ? "done" : diff <= 0 ? "late" : diff <= SOON_MS ? "soon" : "";
-        var when = done ? "Done" : cls === "late" ? "" : cls === "soon" ? '<span class="cd" style="margin:0" data-cd="' + due + '">' + clock(diff) + '</span>' : "Due " + fmt(due);
+        var due = t.at + iv.ms, done = !!t.checks[iv.key];
+        var cls = done ? "done" : ivState(due, now);
+        var when = done ? "Done" : cls === "late" ? "" : cls === "soon" ? '<span class="cd" style="margin:0" data-cd="' + dayEnd(due) + '">' + clock(dayEnd(due) - now) + '</span>' : "Due " + fmt(due);
         return '<label class="step ' + cls + '"><input type="checkbox" data-check="' + esc(t.id) + '|' + iv.key + '"' + (done ? " checked" : "") + '>' +
           '<span class="lbl">' + iv.label + '</span><span class="when">' + when + '</span></label>';
       }).join("");
