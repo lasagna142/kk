@@ -83,7 +83,7 @@ input[type=text], input[type=date] { background: var(--surface); border: 1px sol
 .scard .calbtn { min-height: 40px; min-width: 44px; font-size: 1.125rem; }
 .scard.open .calbtn { transform: rotate(180deg); }
 .scard.ypv:not(.open) .rem.late { display: none; }
-.skulls { display: flex; gap: 6px; align-items: center; }
+.skulls { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; max-width: 55%; }
 .skull { display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .skull i { font-style: normal; font-size: .6875rem; color: var(--muted); margin-top: 1px; }
 .subbar { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 8px 0; margin: -8px 0; }
@@ -422,10 +422,10 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   function overdueRounds(t) { var now = Date.now(); return INTERVALS.filter(function (iv) { return !t.checks[iv.key] && t.at + iv.ms <= now; }).length; }
   function skull(n) {
     var id = "sk" + (skullN++), f = n / INTERVALS.length, y = Math.round((1 - f) * 100);
-    return '<span class="skull" title="' + n + '/' + INTERVALS.length + '"><svg viewBox="0 0 24 24" width="38" height="38" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="1" x2="0" y2="0">' +
+    return '<span class="skull"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="1" x2="0" y2="0">' +
       '<stop offset="' + (f * 100) + '%" stop-color="#ff6b6b"/><stop offset="' + (f * 100) + '%" stop-color="#3a3a42"/></linearGradient></defs>' +
       '<path fill="url(#' + id + ')" d="M12 2C7 2 4 5.5 4 10c0 2.6 1.2 4.4 3 5.6V19a1 1 0 001 1h8a1 1 0 001-1v-3.6c1.8-1.2 3-3 3-5.6 0-4.5-3-8-8-8z"/>' +
-      '<circle cx="9" cy="10.5" r="2" fill="#09090b"/><circle cx="15" cy="10.5" r="2" fill="#09090b"/><path d="M11 14.5h2l-1 1.8z" fill="#09090b"/></svg><i>' + n + '/' + INTERVALS.length + '</i></span>';
+      '<circle cx="9" cy="10.5" r="2" fill="#09090b"/><circle cx="15" cy="10.5" r="2" fill="#09090b"/><path d="M11 14.5h2l-1 1.8z" fill="#09090b"/></svg></span>';
   }
   function renderHome() {
     var cards = displaySubjects().map(function (x) {
@@ -434,7 +434,10 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var list = x.rems.slice().sort(function (a, b) { return b.t.at - a.t.at; });   // newest topic first
       var reds = list.filter(function (r) { return r.late; });
       var tint = x.rank ? (yellow ? "tint-soon" : "tint-late") : "";
-      var skulls = (!yellow && reds.length) ? '<span class="skulls">' + reds.slice(0, 5).map(function (r) { return skull(overdueRounds(r.t)); }).join("") + (reds.length > 5 ? '<b class="more">+' + (reds.length - 5) + '</b>' : '') + '</span>' : '';
+      var total = x.s.topics.reduce(function (n, t) { return n + overdueRounds(t); }, 0), sk = "";   // overdue rounds pool together: 4 rounds = 1 full skull
+      for (var q = 0; q < Math.floor(total / INTERVALS.length); q++) sk += skull(INTERVALS.length);
+      if (total % INTERVALS.length) sk += skull(total % INTERVALS.length);
+      var skulls = sk ? '<span class="skulls">' + sk + '</span>' : '';
       var canToggle = yellow ? reds.length > 0 : list.length > 0;
       return '<div class="scard ' + tint + (yellow ? " ypv" : "") + (open ? " open" : "") + '" role="button" tabindex="0" data-cid="' + esc(x.s.id) + '" data-topics="' + esc(x.s.id) + '"><div class="hrow" style="flex-wrap:nowrap"><div class="name" style="flex:1;min-width:0"><span class="code">' + x.code + '</span><span>' + esc(x.s.name) + '</span></div>' + skulls +
         (canToggle ? '<button class="calbtn" data-tog="' + key + '" aria-label="Toggle topics">▾</button>' : '') + '</div>' +
