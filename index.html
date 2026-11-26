@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ตารางทบทวนวิชา</title>
+<title>Review Tracker</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: one column. Subjects stack top to bottom; each card lists what is overdue (red) or nearly due (yellow). */
@@ -18,29 +18,37 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
-.shell { display: grid; grid-template-columns: 58fr 42fr; gap: 0; height: 100vh; height: 100dvh; }
-.calpane { padding: 20px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); }
+.shell { display: grid; grid-template-columns: 38fr 62fr; gap: 0; height: 100vh; height: 100dvh; }
+.calpane { padding: 16px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); }
 .wrap { padding: 20px; overflow: auto; min-width: 0; display: flex; flex-direction: column; gap: 16px; align-content: start; }
 .wrap > * { flex: none; }
 .wrap > header h1, header h1 { flex: 1 1 auto; }
+.acc { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 12px; }
+.acch2 { display: flex; align-items: center; gap: 8px; }
+.acch { flex: 1; width: 100%; background: none; border: 0; text-align: left; font-weight: 700; font-size: 1rem; min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0; }
+.acch .cnt { color: var(--muted); font-weight: 500; margin-left: 6px; }
+.acch .chev { color: var(--muted); }
+.accb { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 10px; }
+.pick { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.pickrow { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 @media (max-width: 900px) {
   .shell { display: block; height: auto; }
   .calpane { border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; }
   .wrap { overflow: visible; padding-bottom: 56px; }
 }
 .calhead { display: flex; align-items: center; gap: 8px; }
-.calhead .ttl { flex: 1; font-size: 1.375rem; font-weight: 800; margin: 0; }
-.calbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-height: 40px; min-width: 40px; padding: 4px 12px; font-weight: 600; }
-.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; flex: 1; grid-auto-rows: minmax(84px, 1fr); }
-.calwd { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; color: var(--muted); font-size: .8125rem; font-weight: 600; text-align: center; }
-.cday { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 4px; align-items: stretch; text-align: left; overflow: hidden; min-width: 0; }
+.calhead .ttl { flex: 1; font-size: 1.1rem; font-weight: 800; margin: 0; }
+.calbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 34px; min-width: 34px; padding: 2px 10px; font-weight: 600; font-size: .875rem; }
+.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; flex: 1; grid-auto-rows: minmax(64px, 1fr); }
+.calwd { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; color: var(--muted); font-size: .75rem; font-weight: 600; text-align: center; }
+.cday { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 3px; align-items: stretch; text-align: left; overflow: hidden; min-width: 0; }
 .cday.blank { background: transparent; border-color: transparent; cursor: default; }
 .cday:not(.blank):hover { border-color: var(--muted); }
-.cday .dn { font-size: .8125rem; font-weight: 600; color: var(--muted); }
+.cday .dn { font-size: .75rem; font-weight: 600; color: var(--muted); }
 .cday.today { border-color: var(--ink); }
 .cday.today .dn { color: var(--ink); font-weight: 800; }
 .chips { display: flex; flex-wrap: wrap; gap: 3px; }
-.chip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .75rem; font-weight: 700; border-radius: 6px; padding: 0 6px; background: #2a2a31; color: var(--ink); line-height: 1.5; }
+.chip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .6875rem; font-weight: 700; border-radius: 6px; padding: 0 6px; background: #2a2a31; color: var(--ink); line-height: 1.5; }
 .chip.late { background: var(--late-soft); color: var(--late); }
 .chip.soon { background: var(--soon-soft); color: var(--soon); }
 .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: .8125rem; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 6px; padding: 0 7px; white-space: nowrap; }
@@ -143,21 +151,21 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 </style>
 </head>
 <body>
-<div class="shell"><aside class="calpane" id="cal" aria-label="ปฏิทิน"></aside><main class="wrap" id="app"></main></div>
+<div class="shell"><aside class="calpane" id="cal" aria-label="Calendar"></aside><main class="wrap" id="app"></main></div>
 
 <script>
 (function () {
   var INTERVALS = [
-    { key: "d1",  label: "24 ชม.", ms: 24 * 3600e3 },
-    { key: "d3",  label: "3 วัน",  ms: 3 * 24 * 3600e3 },
-    { key: "d7",  label: "7 วัน",  ms: 7 * 24 * 3600e3 },
-    { key: "d21", label: "21 วัน", ms: 21 * 24 * 3600e3 }
+    { key: "d1",  label: "24h", ms: 24 * 3600e3 },
+    { key: "d3",  label: "3d",  ms: 3 * 24 * 3600e3 },
+    { key: "d7",  label: "7d",  ms: 7 * 24 * 3600e3 },
+    { key: "d21", label: "21d", ms: 21 * 24 * 3600e3 }
   ];
   var SOON_MS = 24 * 3600e3;      // yellow when a review is due within the next 24 hours
   var MAX_REMS = 6;               // reminders shown per subject card before "+N more"
   var LS_KEY = "review-tracker-v1";
   var state = { subjects: [] };
-  var view = { subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null, gconfirm: false, libTopic: "" };
+  var view = { open: {}, subjectId: null, tab: "topics", confirm: null, pending: null, msg: null, viewer: null, gconfirm: false, libTopic: "" };
   var app = document.getElementById("app");
 
   var COLL = (typeof Intl !== "undefined" && Intl.Collator) ? new Intl.Collator(["th", "en"], { numeric: true, sensitivity: "base" }) : { compare: function (a, b) { return a < b ? -1 : a > b ? 1 : 0; } };
@@ -170,7 +178,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   var cal = { y: new Date().getFullYear(), m: new Date().getMonth(), day: null };
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
-  function fmt(ts) { return new Date(ts).toLocaleDateString("th-TH", { day: "numeric", month: "short" }); }
+  function fmt(ts) { var d = new Date(ts); return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1); }
+  function isConfirm(v) { v = String(v).trim().toLowerCase(); return v === "confirm" || v === "ยืนยัน"; }
   function todayStr() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function stampFor(dateStr) {
     if (!dateStr || dateStr === todayStr()) return Date.now();
@@ -186,7 +195,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   // ---------- text storage ----------
   function normalize(o) { return o && Array.isArray(o.subjects) ? o : { subjects: [] }; }
   function lsRead() { try { return normalize(JSON.parse(localStorage.getItem(LS_KEY))); } catch (e) { return { subjects: [] }; } }
-  function persist() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { view.msg = { text: "บันทึกไม่สำเร็จ (พื้นที่เบราว์เซอร์เต็มหรือถูกปิด) ลองกดสำรองข้อมูลไว้ก่อน", warn: true }; } }
+  function persist() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { view.msg = { text: "Could not save (browser storage full or blocked). Try Export.", warn: true }; } }
 
   // ---------- image storage (IndexedDB) ----------
   var idb = null, STORE = "imgs";
@@ -229,21 +238,29 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 
   // ---------- reminders ----------
   // One entry per topic: red if any review is overdue, otherwise yellow if one is due within SOON_MS.
-  function reminders(subject) {
-    var now = Date.now(), out = [];
-    subject.topics.forEach(function (t) {
-      var late = null, soon = null;
-      INTERVALS.forEach(function (iv) {
-        if (t.checks[iv.key]) return;
-        var due = t.at + iv.ms, diff = due - now;
-        if (diff <= 0) { if (!late || due < late.due) late = { due: due, label: iv.label }; }
-        else if (diff <= SOON_MS) { if (!soon || due < soon.due) soon = { due: due, label: iv.label }; }
-      });
-      var pick = late || soon;
-      if (pick) out.push({ t: t, late: !!late, due: pick.due, label: pick.label });
+  function topicRem(t) {
+    var now = Date.now(), late = null, soon = null;
+    INTERVALS.forEach(function (iv) {
+      if (t.checks[iv.key]) return;
+      var due = t.at + iv.ms, diff = due - now;
+      if (diff <= 0) { if (!late || due < late.due) late = { due: due }; }
+      else if (diff <= SOON_MS) { if (!soon || due < soon.due) soon = { due: due }; }
     });
-    out.sort(function (a, b) { return (a.late === b.late ? 0 : a.late ? -1 : 1) || a.due - b.due; });
-    return out;
+    var pick = late || soon;
+    return pick ? { t: t, late: !!late, due: pick.due } : null;
+  }
+  // yellow first (soonest on top), then red (least overdue first)
+  function remCmp(a, b) { if (a.late !== b.late) return a.late ? 1 : -1; return a.late ? b.due - a.due : a.due - b.due; }
+  function reminders(subject) {
+    return subject.topics.map(topicRem).filter(Boolean).sort(remCmp);
+  }
+  function displaySubjects() {
+    var codes = {}; sortedSubjects().forEach(function (x, i) { codes[x.id] = String(i + 1).padStart(3, "0"); });
+    return state.subjects.map(function (x) { var r = reminders(x); return { s: x, code: codes[x.id], rems: r, rank: r[0] || null }; }).sort(function (a, b) {
+      if (a.rank && b.rank) return remCmp(a.rank, b.rank);
+      if (a.rank) return -1; if (b.rank) return 1;
+      return byName(a.s, b.s);
+    });
   }
   // every unchecked review round, grouped by the local day it falls due
   function dueByDay() {
@@ -296,15 +313,15 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       a.download = "review-backup-" + todayStr() + ".json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-      view.msg = { text: "ดาวน์โหลดไฟล์สำรองแล้ว (" + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ, " + images.length + " ไฟล์) ไฟล์อยู่ในโฟลเดอร์ดาวน์โหลด", warn: false };
-    }).catch(function () { view.msg = { text: "สำรองข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง", warn: true }; }).then(render);
+      view.msg = { text: "Backup downloaded (" + state.subjects.length + " subjects, " + countTopics(state) + " topics, " + images.length + " files)", warn: false };
+    }).catch(function () { view.msg = { text: "Export failed. Try again.", warn: true }; }).then(render);
   }
   function readImport(file) {
     var r = new FileReader();
     r.onload = function () {
       var raw = null, parsed = null;
       try { raw = JSON.parse(r.result); parsed = cleanState(raw); } catch (e) {}
-      if (!parsed) { view.pending = null; view.msg = { text: "อ่านไฟล์นี้ไม่ได้ ใช้ได้เฉพาะไฟล์สำรองที่ดาวน์โหลดจากเว็บนี้", warn: true }; }
+      if (!parsed) { view.pending = null; view.msg = { text: "Not a valid backup file", warn: true }; }
       else {
         var ids = {}; parsed.subjects.forEach(function (s) { ids[s.id] = true; });
         var images = Array.isArray(raw.images) ? raw.images.filter(function (x) { return x && typeof x.data === "string" && x.data.indexOf("data:") === 0 && ids[x.subjectId]; }) : null;
@@ -313,7 +330,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       }
       render();
     };
-    r.onerror = function () { view.msg = { text: "เปิดไฟล์ไม่สำเร็จ ลองใหม่อีกครั้ง", warn: true }; render(); };
+    r.onerror = function () { view.msg = { text: "Could not open file", warn: true }; render(); };
     r.readAsText(file);
   }
   function applyImport() {
@@ -328,8 +345,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       });
     }
     return work.then(function () {
-      view.msg = { text: "นำเข้าข้อมูลแล้ว: " + state.subjects.length + " วิชา, " + countTopics(state) + " หัวข้อ" + (p.images ? ", " + p.images.length + " ไฟล์" : ""), warn: false };
-    }).catch(function () { view.msg = { text: "นำเข้าข้อความแล้ว แต่นำเข้าไฟล์ไม่สำเร็จ", warn: true }; }).then(render);
+      view.msg = { text: "Imported " + state.subjects.length + " subjects, " + countTopics(state) + " topics" + (p.images ? ", " + p.images.length + " files" : ""), warn: false };
+    }).catch(function () { view.msg = { text: "Imported data, but files failed", warn: true }; }).then(render);
   }
 
   // ---------- render ----------
@@ -340,15 +357,15 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     revokeLib();
     var s = view.subjectId ? subj(view.subjectId) : null;
     if (view.subjectId && !s) view.subjectId = null;
-    app.innerHTML = !s ? renderHome() : view.tab === "lib" ? renderLibShell(s) : view.tab === "imgs" ? renderImgsShell(s) : renderTopics(s);
+    app.innerHTML = !s ? renderHome() : view.tab === "imgs" ? renderImgsShell(s) : renderTopics(s);
     renderCal();
-    if (s && view.tab === "lib") loadLibrary(s);
+    if (s && view.tab === "topics") loadFiles(s);
     if (s && view.tab === "imgs") loadImages(s);
   }
 
   function remLine(r) {
     return '<li class="rem ' + (r.late ? "late" : "soon") + '"><span class="what">' + esc(r.t.title) + '</span>' +
-      '<span class="due">ทบทวน ' + r.label + ' · ถึงวันที่ ' + fmt(r.due) + (r.late ? '' : '<span class="cd" data-cd="' + (r.due) + '">' + clock(r.due - Date.now()) + '</span>') + '</span></li>';
+      (r.late ? '' : '<span class="cd" data-cd="' + r.due + '">' + clock(r.due - Date.now()) + '</span>') + '</li>';
   }
   function renderCal() {
     var el = document.getElementById("cal"); if (!el) return;
@@ -363,50 +380,45 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var chips = Object.keys(by).sort(function (a, b) { return codes[a] < codes[b] ? -1 : 1; }).map(function (id) { return '<span class="chip ' + by[id].st + '">' + codes[id] + '</span>'; }).join("");
       cells += '<button class="cday' + (k === tk ? " today" : "") + '" data-day="' + k + '"><span class="dn">' + d + '</span><span class="chips">' + chips + '</span></button>';
     }
-    var wd = ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."].map(function (x) { return "<div>" + x + "</div>"; }).join("");
-    el.innerHTML = '<div class="calhead"><h2 class="ttl">' + first.toLocaleDateString("th-TH", { month: "long", year: "numeric" }) + '</h2>' +
-      '<button class="calbtn" data-calnav="today">วันนี้</button><button class="calbtn" data-calnav="-1" aria-label="เดือนก่อน">‹</button><button class="calbtn" data-calnav="1" aria-label="เดือนถัดไป">›</button></div>' +
+    var wd = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(function (x) { return "<div>" + x + "</div>"; }).join("");
+    el.innerHTML = '<div class="calhead"><h2 class="ttl">' + first.toLocaleDateString("en-GB", { month: "long", year: "numeric" }) + '</h2>' +
+      '<button class="calbtn" data-calnav="today">Today</button><button class="calbtn" data-calnav="-1" aria-label="Previous month">‹</button><button class="calbtn" data-calnav="1" aria-label="Next month">›</button></div>' +
       '<div class="calwd">' + wd + '</div><div class="calgrid">' + cells + '</div>';
   }
   function showDay(k) {
     var old = document.getElementById("daydlg"); if (old) old.remove();
     cal.day = k; if (!k) return;
     var p = k.split("-"), date = new Date(+p[0], +p[1] - 1, +p[2]);
-    var items = dueByDay()[k] || [], by = {};
+    var items = (dueByDay()[k] || []).filter(function (x) { return x.st !== "late"; }), by = {};
     items.forEach(function (x) { (by[x.s.id] = by[x.s.id] || { s: x.s, list: [] }).list.push(x); });
     var body = Object.keys(by).map(function (id) { return by[id]; }).sort(function (a, b) { return codeOf(a.s.id) < codeOf(b.s.id) ? -1 : 1; }).map(function (g) {
       return '<div class="dsub"><button class="dsh" data-gosub="' + esc(g.s.id) + '"><span class="code">' + codeOf(g.s.id) + '</span><span>' + esc(g.s.name) + '</span></button>' +
-        g.list.sort(function (a, b) { return a.due - b.due; }).map(function (x) { return '<div class="dtop ' + x.st + '"><span>' + esc(x.t.title) + '</span><span class="rd">ทบทวน ' + x.label + '</span></div>'; }).join("") + '</div>';
+        g.list.sort(function (a, b) { return a.due - b.due; }).map(function (x) { return '<div class="dtop ' + x.st + '"><span>' + esc(x.t.title) + '</span></div>'; }).join("") + '</div>';
     }).join("");
     document.body.insertAdjacentHTML("beforeend", '<div class="dlg" id="daydlg" data-dayclose="bg"><div class="dlgbox" role="dialog" aria-modal="true"><div class="calhead"><h2 class="ttl">' +
-      date.toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + '</h2><button class="calbtn" data-dayclose="x" aria-label="ปิด">✕</button></div>' +
-      (body || '<div class="empty">ไม่มีหัวข้อที่ต้องทบทวนในวันนี้</div>') + '</div></div>');
+      date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + '</h2><button class="calbtn" data-dayclose="x" aria-label="Close">✕</button></div>' +
+      (body || '<div class="empty">Nothing due</div>') + '</div></div>');
   }
   function renderHome() {
-    var cards = sortedSubjects().map(function (s, i) {
-      var rems = reminders(s);
-      var items = rems.slice(0, MAX_REMS).map(remLine).join("");
-      return '<div class="scard" role="button" tabindex="0" data-topics="' + esc(s.id) + '"><div class="name"><span class="code">' + String(i + 1).padStart(3, "0") + '</span><span>' + esc(s.name) + '</span></div>' +
-        (rems.length ? '<ul class="rems">' + items + '</ul>' + (rems.length > MAX_REMS ? '<div class="more">และอีก ' + (rems.length - MAX_REMS) + ' หัวข้อ</div>' : "")
-                     : '<div class="ok">✓ ไม่มีค้างทบทวน</div>') + '</div>';
+    var cards = displaySubjects().map(function (x) {
+      var items = x.rems.slice(0, MAX_REMS).map(remLine).join("");
+      return '<div class="scard" role="button" tabindex="0" data-topics="' + esc(x.s.id) + '"><div class="name"><span class="code">' + x.code + '</span><span>' + esc(x.s.name) + '</span></div>' +
+        (x.rems.length ? '<ul class="rems">' + items + '</ul>' + (x.rems.length > MAX_REMS ? '<div class="more">+' + (x.rems.length - MAX_REMS) + '</div>' : "") : '') + '</div>';
     }).join("");
-    return '<header><h1>ตารางทบทวนวิชา</h1><div class="hrow"><button class="btn ghost small" data-export="1">สำรองข้อมูล</button>' +
-      '<label class="btn ghost small filebtn" for="importFile">นำเข้าข้อมูล</label>' +
+    return '<header><h1>Subjects</h1><div class="hrow"><button class="btn ghost small" data-export="1">Export</button>' +
+      '<label class="btn ghost small filebtn" for="importFile">Import</label>' +
       '<input type="file" id="importFile" accept=".json,application/json" hidden></div></header>' +
       renderNotes() +
-      '<form class="addrow" id="addSubject"><input type="text" id="subjectName" placeholder="ชื่อวิชา เช่น Database Systems" maxlength="80" autocomplete="off" aria-label="ชื่อวิชา">' +
-      '<button class="btn" type="submit">+ เพิ่มวิชา</button></form>' +
-      (state.subjects.length ? '<div class="stack">' + cards + '</div>' :
-        '<div class="empty">ยังไม่มีวิชา<br>พิมพ์ชื่อวิชาด้านบนแล้วกด “เพิ่มวิชา” แล้วกดที่กรอบวิชาเพื่อเข้าไป</div>');
+      '<form class="addrow" id="addSubject"><input type="text" id="subjectName" placeholder="New subject" maxlength="80" autocomplete="off" aria-label="Subject name">' +
+      '<button class="btn" type="submit">Add</button></form>' +
+      (state.subjects.length ? '<div class="stack">' + cards + '</div>' : '<div class="empty">No subjects yet</div>');
   }
   function renderNotes() {
     var h = "";
     if (view.pending) {
       var p = view.pending;
-      h += '<div class="note warn">ไฟล์นี้มี ' + p.state.subjects.length + ' วิชา, ' + countTopics(p.state) + ' หัวข้อ' + (p.images ? ', ' + p.images.length + ' ไฟล์' : '') +
-        ' การนำเข้าจะ <b>แทนที่ข้อมูลปัจจุบันทั้งหมด</b>' + (p.images ? ' (รวมไฟล์ในคลัง)' : '') + ' (ตอนนี้มี ' + state.subjects.length + ' วิชา, ' + countTopics(state) +
-        ' หัวข้อ) ถ้ากลัวเสียข้อมูลเดิม กดสำรองข้อมูลก่อน</div>' +
-        '<div class="row"><button class="btn small" data-doimport="1">แทนที่ข้อมูลปัจจุบัน</button><button class="btn ghost small" data-cancelimport="1">ยกเลิก</button></div>';
+      h += '<div class="note warn">Replace current data with this backup (' + p.state.subjects.length + ' subjects, ' + countTopics(p.state) + ' topics' + (p.images ? ', ' + p.images.length + ' files' : '') + ')?</div>' +
+        '<div class="row"><button class="btn small" data-doimport="1">Replace</button><button class="btn ghost small" data-cancelimport="1">Cancel</button></div>';
     }
     if (view.msg) h += '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>';
     return h;
@@ -414,105 +426,98 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 
   function subjectHead(s) {
     var c = view.confirm === "s:" + s.id;
-    return '<header><button class="back" data-home="1">← วิชาทั้งหมด</button><span class="sp"></span>' +
-      '<button class="linkdanger" data-askdels="' + esc(s.id) + '">ลบวิชา</button></header>' +
+    return '<header><button class="back" data-home="1">← Subjects</button><span class="sp"></span>' +
+      '<button class="linkdanger" data-askdels="' + esc(s.id) + '">Delete subject</button></header>' +
       '<h1><span class="code" style="vertical-align:middle;margin-right:8px">' + codeOf(s.id) + '</span>' + esc(s.name) + '</h1>' +
-      (c ? '<div class="note warn">จะลบวิชานี้ พร้อมหัวข้อและไฟล์ทั้งหมด ลบแล้วกู้คืนไม่ได้ (ถ้าเคยสำรองข้อมูลไว้ นำเข้าคืนได้) พิมพ์คำว่า <b>ยืนยัน</b> เพื่อลบ</div>' +
-           '<div class="addrow"><input type="text" id="delConfirm" placeholder="พิมพ์ ยืนยัน" autocomplete="off" aria-label="พิมพ์ยืนยันเพื่อลบวิชา">' +
-           '<button class="btn danger" id="delGo" data-dels="' + esc(s.id) + '" disabled>ลบวิชานี้</button>' +
-           '<button class="btn ghost" data-cancel="1">ไม่ลบ</button></div>' : '') +
-      (view.msg && view.tab === "topics" ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : '') +
-      '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">หัวข้อ</button>' +
-      '<button class="tab' + (view.tab === "lib" ? " on" : "") + '" data-lib="' + esc(s.id) + '">คลังไฟล์</button>' +
-      '<button class="tab' + (view.tab === "imgs" ? " on" : "") + '" data-imgs="' + esc(s.id) + '">รูปภาพ</button></div>';
+      (c ? '<div class="note warn">Type <b>confirm</b> to delete this subject and everything in it.</div>' +
+           '<div class="addrow"><input type="text" id="delConfirm" placeholder="confirm" autocomplete="off" aria-label="Type confirm">' +
+           '<button class="btn danger" id="delGo" data-dels="' + esc(s.id) + '" disabled>Delete</button>' +
+           '<button class="btn ghost" data-cancel="1">Cancel</button></div>' : '') +
+      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : '') +
+      '<div class="tabs"><button class="tab' + (view.tab === "topics" ? " on" : "") + '" data-topics="' + esc(s.id) + '">Topics</button>' +
+      '<button class="tab' + (view.tab === "imgs" ? " on" : "") + '" data-imgs="' + esc(s.id) + '">Gallery</button></div>';
   }
-
   function renderTopics(s) {
-    var sorted = s.topics.slice().sort(function (a, b) { return a.at - b.at; });
+    var now = Date.now();
+    var sorted = s.topics.map(function (t) { return { t: t, r: topicRem(t) }; }).sort(function (a, b) {
+      if (a.r && b.r) return remCmp(a.r, b.r); if (a.r) return -1; if (b.r) return 1; return a.t.at - b.t.at;
+    }).map(function (x) { return x.t; });
     var topics = sorted.map(function (t) {
-      var now = Date.now();
       var steps = INTERVALS.map(function (iv) {
         var due = t.at + iv.ms, diff = due - now, done = !!t.checks[iv.key];
         var cls = done ? "done" : diff <= 0 ? "late" : diff <= SOON_MS ? "soon" : "";
-        var when = done ? "ทบทวนแล้ว" : "ถึงวันที่ " + fmt(due) + (cls === "soon" ? '<br><span class="cd" style="margin:0" data-cd="' + due + '">' + clock(diff) + '</span>' : "");
+        var when = done ? "Done" : cls === "late" ? "" : cls === "soon" ? '<span class="cd" style="margin:0" data-cd="' + due + '">' + clock(diff) + '</span>' : "Due " + fmt(due);
         return '<label class="step ' + cls + '"><input type="checkbox" data-check="' + esc(t.id) + '|' + iv.key + '"' + (done ? " checked" : "") + '>' +
           '<span class="lbl">' + iv.label + '</span><span class="when">' + when + '</span></label>';
       }).join("");
-      var c = view.confirm === "t:" + t.id;
-      return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) + '</div><div class="topic-date">อ่านเมื่อ ' + fmt(t.at) + '</div></div>' +
-        (c ? '<span class="row"><span class="fmeta">ลบหัวข้อ (รวมไฟล์ของหัวข้อ)?</span><button class="btn danger small" data-delt="' + esc(t.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button></span>'
-           : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="ลบหัวข้อ">ลบ</button>') +
-        '</div><div class="steps">' + steps + '</div></div>';
+      var c = view.confirm === "t:" + t.id, key = "t:" + t.id;
+      return '<div class="topic"><div class="topic-head"><div style="min-width:0"><div class="topic-title">' + esc(t.title) + '</div><div class="topic-date">' + fmt(t.at) + '</div></div>' +
+        (c ? '<span class="row"><button class="btn danger small" data-delt="' + esc(t.id) + '">Delete</button><button class="btn ghost small" data-cancel="1">Cancel</button></span>'
+           : '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="Delete topic">Delete</button>') +
+        '</div><div class="steps">' + steps + '</div>' +
+        '<div class="acc"><button class="acch" data-tog="' + key + '"><span>Files<span class="cnt" data-tcnt="' + esc(t.id) + '"></span></span><span class="chev">▾</span></button>' +
+        '<div class="accb" data-body="' + key + '"' + (view.open[key] ? '' : ' hidden') + '><div data-tfiles="' + esc(t.id) + '"></div></div></div></div>';
     }).join("");
-    return subjectHead(s) +
-      '<form class="addrow" id="addTopic"><input type="text" id="topicTitle" placeholder="หัวข้อที่อ่าน เช่น Normalization" maxlength="120" autocomplete="off" aria-label="ชื่อหัวข้อ">' +
-      '<input type="date" id="topicDate" value="' + todayStr() + '" aria-label="วันที่อ่าน"><button class="btn" type="submit">+ เพิ่มหัวข้อ</button></form>' +
-      (s.topics.length ? topics : '<div class="empty">ยังไม่มีหัวข้อในวิชานี้<br>เพิ่มหัวข้อที่อ่านแล้ว ระบบจะนับเวลาทบทวนที่ 24 ชม. / 3 / 7 / 21 วัน</div>');
+    var storage = idb
+      ? '<div class="acc"><div class="acch2"><button class="acch" data-tog="storage"><span>Storage<span class="cnt" id="storCnt"></span></span><span class="chev">▾</span></button>' +
+        '<label class="btn small filebtn" for="libFileGen">Upload</label><input type="file" id="libFileGen" multiple hidden></div>' +
+        '<div class="accb" data-body="storage"' + (view.open.storage ? '' : ' hidden') + '><div id="storList"></div></div></div>'
+      : '';
+    return subjectHead(s) + storage +
+      '<form class="addrow" id="addTopic"><input type="text" id="topicTitle" placeholder="New topic" maxlength="120" autocomplete="off" aria-label="Topic name">' +
+      '<input type="date" id="topicDate" value="' + todayStr() + '" aria-label="Date studied"><button class="btn" type="submit">Add</button></form>' +
+      (s.topics.length ? topics : '<div class="empty">No topics yet</div>');
   }
 
   function isImage(r) { return /^image\//.test(r.type || ""); }
   function fmtSize(n) { return n < 1024 ? n + " B" : n < 1048576 ? Math.round(n / 1024) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
-  function extOf(name) { var m = /\.([A-Za-z0-9]{1,5})$/.exec(name); return m ? m[1].toUpperCase() : "ไฟล์"; }
+  function extOf(name) { var m = /\.([A-Za-z0-9]{1,5})$/.exec(name); return m ? m[1].toUpperCase() : "FILE"; }
   var libCache = {};
 
-  function renderLibShell(s) {
-    if (!idb) return subjectHead(s) + '<div class="note warn">เบราว์เซอร์นี้เก็บไฟล์ไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>';
-    var topics = s.topics.slice().sort(function (a, b) { return a.at - b.at; });
-    var opts = '<option value="">— เลือกหัวข้อก่อนอัปโหลด —</option>' + topics.map(function (t) {
-      return '<option value="' + esc(t.id) + '"' + (view.libTopic === t.id ? " selected" : "") + '>' + esc(t.title) + '</option>';
-    }).join("");
-    return subjectHead(s) +
-      '<section class="sec"><h2>คลังเก็บของ</h2><div class="hint">ไฟล์จิปาถะของวิชานี้ ไม่ผูกกับหัวข้อ</div>' +
-      '<div class="row"><label class="btn small filebtn" for="libFileGen">+ เพิ่มไฟล์</label><input type="file" id="libFileGen" multiple hidden></div>' +
-      '<div class="files" id="libGen"><div class="empty">กำลังโหลด…</div></div></section>' +
-      '<section class="sec"><h2>ไฟล์ตามหัวข้อ</h2><div class="hint">เลือกหัวข้อของวิชานี้ แล้วอัปโหลดเข้าหัวข้อนั้น จะหาไฟล์ง่ายขึ้น</div>' +
-      (topics.length
-        ? '<div class="addrow"><select id="libTopic" aria-label="หัวข้อ">' + opts + '</select><button class="btn small" data-uptopic="1">+ เพิ่มไฟล์เข้าหัวข้อ</button></div>' +
-          '<input type="file" id="libFileTopic" multiple hidden>'
-        : '<div class="note warn">ยังไม่มีหัวข้อในวิชานี้ ไปเพิ่มหัวข้อที่แท็บ “หัวข้อ” ก่อน</div>') +
-      '<div class="files" id="libTop"></div></section>' +
-      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "");
-  }
-  function fileRow(r) {
-    var icon = '<div class="ficon">' + esc(extOf(r.name)) + '</div>';
+  function fileRow(r, where) {
     var c = view.confirm === "i:" + r.id;
-    return '<div class="frow">' + icon + '<div><div class="fname">' + esc(r.name) + '</div><div class="fmeta">' + fmtSize(r.blob.size) + ' · ' + fmt(r.at) + '</div></div>' +
-      '<div class="facts"><button class="btn ghost small" data-openf="' + esc(r.id) + '">เปิด</button><button class="btn ghost small" data-dl="' + esc(r.id) + '">ดาวน์โหลด</button>' +
-      (c ? '<button class="btn danger small" data-delimg="' + esc(r.id) + '">ลบเลย</button><button class="btn ghost small" data-cancel="1">ไม่ลบ</button>'
-         : '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">ลบ</button>') + '</div></div>';
+    return '<div class="frow"><div class="ficon">' + esc(extOf(r.name)) + '</div><div><div class="fname">' + esc(r.name) + '</div><div class="fmeta">' + fmtSize(r.blob.size) + '</div></div>' +
+      '<div class="facts"><button class="btn ghost small" data-openf="' + esc(r.id) + '">Open</button><button class="btn ghost small" data-dl="' + esc(r.id) + '">Download</button>' +
+      (where === "topic" ? '<button class="btn ghost small" data-unattach="' + esc(r.id) + '">To Storage</button>' : '') +
+      (c ? '<button class="btn danger small" data-delimg="' + esc(r.id) + '">Delete</button><button class="btn ghost small" data-cancel="1">Cancel</button>'
+         : '<button class="btn ghost small" data-askdelimg="' + esc(r.id) + '">Delete</button>') + '</div></div>';
   }
-  function loadLibrary(s) {
+  function loadFiles(s) {
     if (!idb) return;
     var sid = s.id;
     imgList(sid).then(function (list) {
-      if (view.subjectId !== sid || view.tab !== "lib") return;
-      var gen = document.getElementById("libGen"), top = document.getElementById("libTop"); if (!gen || !top) return;
+      if (view.subjectId !== sid || view.tab !== "topics") return;
+      var sl = document.getElementById("storList"); if (!sl) return;
       revokeLib(); libCache = {};
-      list = list.filter(function (r) { return !isImage(r); });
-      list.sort(byName);
-      var topicIds = {}; s.topics.forEach(function (t) { topicIds[t.id] = t; });
-      list.forEach(function (r) { libCache[r.id] = r; });
-      var general = list.filter(function (r) { return !r.topicId || !topicIds[r.topicId]; });
-      gen.innerHTML = general.length ? general.map(fileRow).join("") : '<div class="empty">ยังไม่มีไฟล์ในคลังเก็บของ</div>';
-      var topics = s.topics.slice().sort(function (a, b) { return a.at - b.at; }), html = "";
-      topics.forEach(function (t) {
-        var fs = list.filter(function (r) { return r.topicId === t.id; });
-        if (fs.length) html += '<div class="tgroup">' + esc(t.title) + ' (' + fs.length + ')</div>' + fs.map(fileRow).join("");
+      var files = list.filter(function (r) { return !isImage(r); }).sort(byName);
+      files.forEach(function (r) { libCache[r.id] = r; });
+      var ids = {}; s.topics.forEach(function (t) { ids[t.id] = true; });
+      var stor = files.filter(function (r) { return !r.topicId || !ids[r.topicId]; });
+      sl.innerHTML = stor.length ? stor.map(function (r) { return fileRow(r, "stor"); }).join("") : '<div class="empty">Empty</div>';
+      var sc = document.getElementById("storCnt"); if (sc) sc.textContent = stor.length ? stor.length : "";
+      s.topics.forEach(function (t) {
+        var fs = files.filter(function (r) { return r.topicId === t.id; });
+        var box = app.querySelector('[data-tfiles="' + t.id + '"]'), cnt = app.querySelector('[data-tcnt="' + t.id + '"]'); if (!box) return;
+        if (cnt) cnt.textContent = fs.length ? fs.length : "";
+        var h = fs.map(function (r) { return fileRow(r, "topic"); }).join("");
+        if (stor.length) h += '<div class="pick">' + stor.map(function (r) {
+          return '<div class="pickrow"><span class="fname">' + esc(r.name) + '</span><button class="btn ghost small" data-attach="' + esc(r.id) + '|' + esc(t.id) + '">Add</button></div>';
+        }).join("") + '</div>';
+        box.innerHTML = h || '<div class="empty">No files</div>';
       });
-      top.innerHTML = html || (s.topics.length ? '<div class="empty">ยังไม่มีไฟล์ในหัวข้อใดเลย</div>' : "");
     }).catch(function () {
-      var gen = document.getElementById("libGen"); if (gen) gen.innerHTML = '<div class="note warn">อ่านคลังไฟล์ไม่ได้</div>';
+      var sl = document.getElementById("storList"); if (sl) sl.innerHTML = '<div class="note warn">Cannot read files</div>';
     });
   }
   function addFiles(files, sid, topicId) {
     var all = Array.prototype.slice.call(files);
     var list = all.filter(function (f) { return !/^image\//.test(f.type || ""); });
-    if (!list.length) { view.msg = { text: "ไฟล์รูปภาพให้เพิ่มที่แท็บ “รูปภาพ”", warn: true }; render(); return; }
+    if (!list.length) { view.msg = { text: "Images go in Gallery", warn: true }; render(); return; }
     var skipped = all.length - list.length;
-    view.msg = { text: "กำลังเพิ่ม " + list.length + " ไฟล์…", warn: false }; render();
+    view.msg = { text: "Uploading " + list.length + "…", warn: false }; render();
     list.reduce(function (chain, f) {
       return chain.then(function () { return imgPut({ id: uid(), subjectId: sid, topicId: topicId || null, name: f.name.slice(0, 160), type: f.type || "", blob: f, at: Date.now() }); });
-    }, Promise.resolve()).then(function () { view.msg = skipped ? { text: "ข้ามไฟล์รูป " + skipped + " ไฟล์ (รูปภาพให้เพิ่มที่แท็บ “รูปภาพ”)", warn: true } : null; }, function () { view.msg = { text: "เพิ่มไฟล์ไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
+    }, Promise.resolve()).then(function () { view.msg = skipped ? { text: "Skipped " + skipped + " image(s) — use Gallery", warn: true } : null; }, function () { view.msg = { text: "Upload failed (storage full?)", warn: true }; }).then(render);
   }
   function openFile(id) {
     var r = libCache[id]; if (!r) return;
@@ -531,14 +536,14 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     return imgList(sid).then(function (l) { return Promise.all(l.filter(function (r) { return r.topicId === tid; }).map(function (r) { return imgDel(r.id); })); }).catch(function () {});
   }
 
-  // ---------- gallery (รูปภาพ tab) ----------
+  // ---------- gallery ----------
   var gOrder = [];
   function renderImgsShell(s) {
-    if (!idb) return subjectHead(s) + '<div class="note warn">เบราว์เซอร์นี้เก็บรูปไม่ได้ (อาจอยู่ในโหมดไม่ระบุตัวตน)</div>';
+    if (!idb) return subjectHead(s) + '<div class="note warn">Storage unavailable in this browser</div>';
     return subjectHead(s) +
-      '<div class="row"><label class="btn small filebtn" for="imgFile">+ เพิ่มรูป</label><input type="file" id="imgFile" accept="image/*" multiple hidden></div>' +
-      '<div id="imgGrid"><div class="empty">กำลังโหลด…</div></div>' +
-      (view.msg ? '<div class="note' + (view.msg.warn ? " warn" : "") + '">' + esc(view.msg.text) + '</div>' : "");
+      '<div class="row"><label class="btn small filebtn" for="imgFile">Upload</label><input type="file" id="imgFile" accept="image/*" multiple hidden></div>' +
+      '<div id="imgGrid"></div>' +
+      "";
   }
   function loadImages(s) {
     if (!idb) return;
@@ -551,11 +556,11 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       gOrder = imgs.map(function (r) { return r.id; });
       imgs.forEach(function (r) { r.url = URL.createObjectURL(r.blob); libUrls.push(r.url); libCache[r.id] = r; });
       grid.innerHTML = imgs.length
-        ? '<div class="grid2">' + imgs.map(function (r) { return '<button class="gthumb" data-gview="' + esc(r.id) + '" aria-label="เปิดรูป"><img src="' + r.url + '" alt=""></button>'; }).join("") + '</div>'
-        : '<div class="empty">ยังไม่มีรูปภาพในวิชานี้<br>กด “เพิ่มรูป” เพื่อเลือกรูปจากเครื่อง</div>';
+        ? '<div class="grid2">' + imgs.map(function (r) { return '<button class="gthumb" data-gview="' + esc(r.id) + '" aria-label="Open photo"><img src="' + r.url + '" alt=""></button>'; }).join("") + '</div>'
+        : '<div class="empty">No photos</div>';
       if (view.viewer && libCache[view.viewer]) showViewer(); else view.viewer = null;
     }).catch(function () {
-      var grid = document.getElementById("imgGrid"); if (grid) grid.innerHTML = '<div class="note warn">อ่านรูปภาพไม่ได้</div>';
+      var grid = document.getElementById("imgGrid"); if (grid) grid.innerHTML = '<div class="note warn">Cannot read photos</div>';
     });
   }
   function showViewer() {
@@ -565,20 +570,20 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     app.insertAdjacentHTML("beforeend",
       '<div class="viewer" id="gviewer" data-closeviewer="1"><img src="' + r.url + '" alt="">' +
       '<span class="vcount">' + (i + 1) + ' / ' + n + '</span>' +
-      '<button class="vbtn vtop" data-closeviewer="1" aria-label="ปิด">✕</button>' +
-      (i > 0 ? '<button class="vbtn nav" style="left:max(8px, env(safe-area-inset-left, 0px))" data-gprev="1" aria-label="รูปก่อนหน้า">‹</button>' : "") +
-      (i < n - 1 ? '<button class="vbtn nav" style="right:max(8px, env(safe-area-inset-right, 0px))" data-gnext="1" aria-label="รูปถัดไป">›</button>' : "") +
+      '<button class="vbtn vtop" data-closeviewer="1" aria-label="Close">✕</button>' +
+      (i > 0 ? '<button class="vbtn nav" style="left:max(8px, env(safe-area-inset-left, 0px))" data-gprev="1" aria-label="Previous">‹</button>' : "") +
+      (i < n - 1 ? '<button class="vbtn nav" style="right:max(8px, env(safe-area-inset-right, 0px))" data-gnext="1" aria-label="Next">›</button>' : "") +
       '<div class="vbottom">' + (view.gconfirm
-        ? '<button class="vbtn" data-gdel="1" style="color:#ff8a7a">ลบรูปนี้เลย</button><button class="vbtn" data-gdelno="1">ไม่ลบ</button>'
-        : '<button class="vbtn" data-dl="' + esc(r.id) + '">ดาวน์โหลด</button><button class="vbtn" data-gdelask="1" style="color:#ff8a7a">ลบ</button>') + '</div></div>');
+        ? '<button class="vbtn" data-gdel="1" style="color:#ff8a7a">Delete</button><button class="vbtn" data-gdelno="1">Cancel</button>'
+        : '<button class="vbtn" data-dl="' + esc(r.id) + '">Download</button><button class="vbtn" data-gdelask="1" style="color:#ff8a7a">Delete</button>') + '</div></div>');
   }
   function addImages(files, sid) {
     var list = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
-    if (!list.length) { view.msg = { text: "เลือกได้เฉพาะไฟล์รูปภาพ", warn: true }; render(); return; }
-    view.msg = { text: "กำลังเพิ่ม " + list.length + " รูป…", warn: false }; render();
+    if (!list.length) { view.msg = { text: "Images only", warn: true }; render(); return; }
+    view.msg = { text: "Uploading " + list.length + "…", warn: false }; render();
     list.reduce(function (chain, f) {
       return chain.then(function () { return shrink(f).then(function (b) { return imgPut({ id: uid(), subjectId: sid, topicId: null, name: f.name.slice(0, 160), type: b.type || f.type, blob: b, at: Date.now() }); }); });
-    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "เพิ่มรูปไม่สำเร็จ (พื้นที่อาจเต็ม)", warn: true }; }).then(render);
+    }, Promise.resolve()).then(function () { view.msg = null; }, function () { view.msg = { text: "Upload failed (storage full?)", warn: true }; }).then(render);
   }
 
   // ---------- events ----------
@@ -598,7 +603,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var inp = document.getElementById("topicTitle"); if (inp) inp.focus();
     }
   });
-  var SEL = "[data-topics],[data-lib],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic],[data-imgs],[data-gview],[data-gprev],[data-gnext],[data-gdelask],[data-gdelno],[data-gdel]";
+  var SEL = "[data-tog],[data-attach],[data-unattach],[data-topics],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic],[data-imgs],[data-gview],[data-gprev],[data-gnext],[data-gdelask],[data-gdelno],[data-gdel]";
   app.addEventListener("click", function (e) {
     var el = e.target.closest(SEL);
     if (!el) return;
@@ -608,7 +613,12 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     if (d.doimport) { applyImport(); return; }
     if (d.cancelimport) view.pending = null;
     else if (d.topics) { view.subjectId = d.topics; view.tab = "topics"; view.confirm = null; view.viewer = null; }
-    else if (d.lib) { view.subjectId = d.lib; view.tab = "lib"; view.confirm = null; view.viewer = null; }
+    else if (d.tog) { view.open[d.tog] = !view.open[d.tog]; var bd = app.querySelector('[data-body="' + d.tog + '"]'); if (bd) bd.hidden = !view.open[d.tog]; return; }
+    else if (d.attach || d.unattach) {
+      var ap = (d.attach || d.unattach).split("|"), rec = libCache[ap[0]]; if (!rec) return;
+      rec.topicId = d.attach ? ap[1] : null; if (d.attach) view.open["t:" + ap[1]] = true;
+      imgPut(rec).catch(function () {}).then(render); return;
+    }
     else if (d.home) { view.subjectId = null; view.confirm = null; view.viewer = null; }
     else if (d.askdelt) view.confirm = "t:" + d.askdelt;
     else if (d.askdels) view.confirm = "s:" + d.askdels;
@@ -636,7 +646,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     else if (d.delt) { var s = subj(view.subjectId); s.topics = s.topics.filter(function (t) { return t.id !== d.delt; }); view.confirm = null; persist(); delTopicFiles(s.id, d.delt); }
     else if (d.dels) {
       var box = document.getElementById("delConfirm");
-      if (!box || box.value.trim() !== "ยืนยัน") return;
+      if (!box || !isConfirm(box.value)) return;
       var sid = d.dels;
       state.subjects = state.subjects.filter(function (x) { return x.id !== sid; });
       view.subjectId = null; view.confirm = null; persist();
@@ -659,7 +669,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     persist(); render();
   });
   app.addEventListener("input", function (e) {
-    if (e.target.id === "delConfirm") { var go = document.getElementById("delGo"); if (go) go.disabled = e.target.value.trim() !== "ยืนยัน"; }
+    if (e.target.id === "delConfirm") { var go = document.getElementById("delGo"); if (go) go.disabled = !isConfirm(e.target.value); }
   });
   app.addEventListener("keydown", function (e) {
     if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("scard")) { e.preventDefault(); e.target.click(); }
@@ -694,7 +704,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   // ---------- boot ----------
   state = lsRead();
   render();
-  openDb().then(function (db) { idb = db; if (view.subjectId && view.tab === "lib") render(); });
+  openDb().then(function (db) { idb = db; if (view.subjectId) render(); });
 })();
 </script>
 </body>
