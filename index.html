@@ -19,12 +19,12 @@
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
 .shell { display: block; }
-.calpane { position: fixed; z-index: 44; left: 0; top: 0; bottom: 0; width: min(460px, 92vw); background: var(--bg); border-right: 1px solid var(--line); padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; transform: translateX(-100%); transition: transform .25s ease; visibility: hidden; }
+.calpane { position: fixed; z-index: 44; left: 0; top: 0; bottom: 0; width: min(780px, 96vw); background: var(--bg); border-right: 1px solid var(--line); padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; transform: translateX(-100%); transition: transform .25s ease; visibility: hidden; }
 body.calopen .calpane { transform: none; visibility: visible; }
 #calBack { position: fixed; inset: 0; z-index: 43; background: rgba(0,0,0,.6); display: none; }
 body.calopen #calBack { display: block; }
-#calToggle { position: fixed; z-index: 45; left: 0; top: 50%; transform: translateY(-50%); width: 28px; height: 64px; border: 1px solid var(--line); border-left: 0; border-radius: 0 12px 12px 0; background: var(--surface); color: var(--ink); font-size: 1.25rem; padding: 0; transition: left .25s ease; }
-body.calopen #calToggle { left: min(460px, 92vw); }
+#calToggle { position: fixed; z-index: 45; left: 0; top: 50%; transform: translateY(-50%); width: 44px; height: 96px; border: 1px solid var(--line); border-left: 0; border-radius: 0 16px 16px 0; background: var(--surface); color: var(--ink); font-size: 2rem; padding: 0; transition: left .25s ease; }
+body.calopen #calToggle { left: min(780px, 96vw); }
 .wrap { max-width: 760px; margin: 0 auto; padding: 20px 20px 56px 40px; display: flex; flex-direction: column; gap: 16px; }
 .wrap > * { flex: none; }
 .wrap > header h1, header h1 { flex: 1 1 auto; }
@@ -37,18 +37,18 @@ body.calopen #calToggle { left: min(460px, 92vw); }
 .pick { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .pickrow { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 .calhead { display: flex; align-items: center; gap: 8px; }
-.calhead .ttl { flex: 1; font-size: 1.1rem; font-weight: 800; margin: 0; }
-.calbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 34px; min-width: 34px; padding: 2px 10px; font-weight: 600; font-size: .875rem; }
-.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; flex: 1; grid-auto-rows: minmax(64px, 1fr); }
-.calwd { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; color: var(--muted); font-size: .75rem; font-weight: 600; text-align: center; }
-.cday { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 3px; align-items: stretch; text-align: left; overflow: hidden; min-width: 0; }
+.calhead .ttl { flex: 1; font-size: 1.5rem; font-weight: 800; margin: 0; }
+.calbtn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 48px; min-width: 56px; padding: 2px 14px; font-weight: 700; font-size: 1.5rem; }
+.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; flex: 1; grid-auto-rows: minmax(100px, 1fr); }
+.calwd { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; color: var(--muted); font-size: .875rem; font-weight: 600; text-align: center; }
+.cday { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; align-items: stretch; text-align: left; overflow: hidden; min-width: 0; }
 .cday.blank { background: transparent; border-color: transparent; cursor: default; }
 .cday:not(.blank):hover { border-color: var(--muted); }
-.cday .dn { font-size: .75rem; font-weight: 600; color: var(--muted); }
+.cday .dn { font-size: .9375rem; font-weight: 600; color: var(--muted); }
 .cday.today { border-color: var(--ink); }
 .cday.today .dn { color: var(--ink); font-weight: 800; }
 .chips { display: flex; flex-wrap: wrap; gap: 3px; }
-.chip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .6875rem; font-weight: 700; border-radius: 6px; padding: 0 6px; background: #2a2a31; color: var(--ink); line-height: 1.5; }
+.chip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .875rem; font-weight: 700; border-radius: 6px; padding: 0 7px; background: #2a2a31; color: var(--ink); line-height: 1.5; }
 .chip.late { background: var(--late-soft); color: var(--late); }
 .chip.soon { background: var(--soon-soft); color: var(--soon); }
 .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; font-size: .8125rem; border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 6px; padding: 0 7px; white-space: nowrap; }
@@ -142,7 +142,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .gthumb { padding: 0; border: 0; background: var(--surface); aspect-ratio: 1; display: block; cursor: pointer; overflow: hidden; }
 .gthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .vbtn { position: fixed; background: rgba(0,0,0,.65); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 10px 16px; font-weight: 600; min-height: 44px; min-width: 44px; z-index: 60; }
-.vbtn.nav { top: 50%; transform: translateY(-50%); font-size: 1.25rem; }
+.vbtn.nav { top: 50%; transform: translateY(-50%); font-size: 2.5rem; line-height: 1; min-width: 64px; min-height: 96px; padding: 0 16px; border-radius: 20px; }
 .vtop { top: max(12px, env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); }
 .vcount { position: fixed; top: max(20px, env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); color: #fff; z-index: 60; font-size: .875rem; }
 .vbottom { position: fixed; bottom: max(14px, env(safe-area-inset-bottom, 0px)); left: 0; right: 0; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; z-index: 60; padding: 0 16px; }
@@ -463,7 +463,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
         '<button class="btn ghost small" data-askdelt="' + esc(t.id) + '" aria-label="Delete topic">Delete</button>' +
         '</div><div class="steps">' + steps + '</div>' +
         '<div class="acc"><div class="acch2"><button class="acch" data-tog="' + key + '"><span>Files<span class="cnt" data-tcnt="' + esc(t.id) + '"></span></span><span class="chev">▾</span></button>' +
-        '<label class="btn small filebtn" for="tf-' + esc(t.id) + '">Add</label><input type="file" id="tf-' + esc(t.id) + '" multiple hidden></div>' +
+        '<button class="btn small" data-pickst="' + esc(t.id) + '">Add</button></div>' +
         '<div class="accb" data-body="' + key + '"' + (view.open[key] ? '' : ' hidden') + '><div data-tfiles="' + esc(t.id) + '"></div></div></div></div>';
     }).join("");
     var storage = idb
@@ -500,15 +500,13 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var ids = {}; s.topics.forEach(function (t) { ids[t.id] = true; });
       var stor = files.filter(function (r) { return !r.topicId || !ids[r.topicId]; });
       sl.innerHTML = stor.length ? stor.map(function (r) { return fileRow(r, "stor"); }).join("") : '<div class="empty">Empty</div>';
+      view.stor = stor.map(function (r) { return { id: r.id, name: r.name }; });
       var sc = document.getElementById("storCnt"); if (sc) sc.textContent = stor.length ? stor.length : "";
       s.topics.forEach(function (t) {
         var fs = files.filter(function (r) { return r.topicId === t.id; });
         var box = app.querySelector('[data-tfiles="' + t.id + '"]'), cnt = app.querySelector('[data-tcnt="' + t.id + '"]'); if (!box) return;
         if (cnt) cnt.textContent = fs.length ? fs.length : "";
         var h = fs.map(function (r) { return fileRow(r, "topic"); }).join("");
-        if (stor.length) h += '<div class="pick">' + stor.map(function (r) {
-          return '<div class="pickrow"><span class="fname">' + esc(r.name) + '</span><button class="btn ghost small" data-attach="' + esc(r.id) + '|' + esc(t.id) + '">Add</button></div>';
-        }).join("") + '</div>';
         box.innerHTML = h || '<div class="empty">No files</div>';
       });
     }).catch(function () {
@@ -609,7 +607,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
       var inp = document.getElementById("topicTitle"); if (inp) inp.focus();
     }
   });
-  var SEL = "[data-tog],[data-attach],[data-unattach],[data-topics],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic],[data-imgs],[data-gview],[data-gprev],[data-gnext],[data-gdelask],[data-gdelno],[data-gdel]";
+  var SEL = "[data-tog],[data-pickst],[data-attach],[data-unattach],[data-topics],[data-home],[data-askdelt],[data-delt],[data-askdels],[data-dels],[data-cancel],[data-export],[data-doimport],[data-cancelimport],[data-closeviewer],[data-askdelimg],[data-delimg],[data-openf],[data-dl],[data-uptopic],[data-imgs],[data-gview],[data-gprev],[data-gnext],[data-gdelask],[data-gdelno],[data-gdel]";
   app.addEventListener("click", function (e) {
     var el = e.target.closest(SEL);
     if (!el) return;
@@ -619,6 +617,22 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
     if (d.doimport) { applyImport(); return; }
     if (d.cancelimport) view.pending = null;
     else if (d.topics) { view.subjectId = d.topics; view.tab = "topics"; view.confirm = null; view.viewer = null; }
+    else if (d.pickst) {
+      var tid1 = d.pickst, st1 = view.stor || [], c1 = document.getElementById("cfm"); if (c1) c1.remove();
+      document.body.insertAdjacentHTML("beforeend", '<div class="dlg" id="cfm"><div class="dlgbox" role="dialog" aria-modal="true"><div class="calhead"><h2 class="ttl">Storage</h2><button class="calbtn" id="pkX" aria-label="Close">✕</button></div>' +
+        (st1.length ? st1.map(function (r) { return '<label class="pickrow"><span class="fname">' + esc(r.name) + '</span><input type="checkbox" value="' + esc(r.id) + '" style="width:22px;height:22px;flex:none"></label>'; }).join("") +
+          '<div class="row" style="justify-content:flex-end"><button class="btn" id="pkGo">Add selected</button></div>' : '<div class="empty">Storage is empty</div>') + '</div></div>');
+      var dg = document.getElementById("cfm");
+      document.getElementById("pkX").onclick = function () { dg.remove(); };
+      dg.addEventListener("click", function (e) { if (e.target === dg) dg.remove(); });
+      var go1 = document.getElementById("pkGo");
+      if (go1) go1.onclick = function () {
+        var ids = Array.prototype.map.call(dg.querySelectorAll("input:checked"), function (i) { return i.value; });
+        if (!ids.length) return; dg.remove(); view.open["t:" + tid1] = true;
+        Promise.all(ids.map(function (id) { var rec = libCache[id]; if (!rec) return null; rec.topicId = tid1; return imgPut(rec).catch(function () {}); })).then(render);
+      };
+      return;
+    }
     else if (d.tog) { view.open[d.tog] = !view.open[d.tog]; var bd = app.querySelector('[data-body="' + d.tog + '"]'); if (bd) bd.hidden = !view.open[d.tog]; return; }
     else if (d.attach || d.unattach) {
       var ap = (d.attach || d.unattach).split("|"), rec = libCache[ap[0]]; if (!rec) return;
